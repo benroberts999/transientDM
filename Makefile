@@ -35,7 +35,7 @@ all: checkObj checkXdir $(ALLEXES)
 ################################################################################
 ## Dependencies:
 
-All programs depend on these generic common headers:
+#All programs depend on these generic common headers:
 COMH = $(addprefix $(ID)/, \
  ClockInfo.h \
 )
@@ -45,13 +45,13 @@ COMH = $(addprefix $(ID)/, \
 $(OD)/%.o: $(ID)/%.cpp $(ID)/%.h $(COMH)
 	$(COMP)
 
-# Rule for files that _don't_ have a .h header. (mains)
-# These also depend on the common headers
-$(OD)/%.o: $(ID)/%.cpp $(COMH)
-	$(COMP)
+# # Rule for files that _don't_ have a .h header. (mains)
+# # These also depend on the common headers
+# $(OD)/%.o: $(ID)/%.cpp $(COMH)
+# 	$(COMP)
 
 # Here: List rules for any other progs that don't fit above rules?
-$(OD)/dummy.o: $(ID)/dummy.cpp $(COMH) $(ID)/otherHeader.h
+$(OD)/main.o: $(ID)/main.cpp $(COMH) $(ID)/ClockNetwork.h $(ID)/DataIO.h
 	$(COMP)
 
 ################################################################################

@@ -20,11 +20,18 @@ int main(){
   ClockNetwork net;
 
   std::string fn="./data/cppdiff_PTBSr-PTBYb.dat";
-  net.readInDataFile(fn);
+  net.readInDataFile(fn,2);
+  fn="./data/cppdiff_SYRTEHg-PTBSr.dat";
+  net.readInDataFile(fn,2);
+
+  //std::cout<<"X: "<<net.new_vector3[0]<<"\n";
 
   std::cout<<net._K_AB[0]<<"\n";
-
   std::cout<<net._delta_omega[0][1]<<"\n";
   std::cout<<net._initial_time[0]<<"\n";
+
+  std::cout<<net._K_AB[1]<<"\n";
+  std::cout<<net._delta_omega[1][1]<<"\n";
+  std::cout<<net._initial_time[1]<<"\n";
 
 }

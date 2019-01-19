@@ -5,17 +5,77 @@
 #include <string>
 
 
+// //******************************************************************************
+// int ClockNetwork::readInDataFile_old(const std::string &in_fname)
+// //XXX Update for other formats!
+// {
+//
+//   std::vector<double> times;
+//   std::vector<double> tmp_dw;
+//   int ok = DataIO::read_text_XY(in_fname,times,tmp_dw);
+//   if(ok!=0) return ok;
+//
+//   //initial_time = (times.front() - MJD_DAY_ZERO) * SECS_IN_DAY;
+//
+//   //time stored as seconds since MJD
+//
+//   //re-scale and shift data points.
+//   //Input file times in units of days (MJD).
+//   //I want in units of seconds, since MJD_DAY_ZERO = 57900
+//   double t_offset = MJD_DAY_ZERO;
+//   double t_scale = SECS_IN_DAY;
+//   for(size_t i=0; i<times.size(); i++){
+//     times[i] -= t_offset;
+//     times[i] *= t_scale;
+//   }
+//
+//   long i_time = (int)round(times.front());
+//   long f_time = (int)round(times.back());
+//   long tot_time = f_time - i_time + 1;
+//
+//   _initial_time.push_back(i_time);
+//   _total_time.push_back(tot_time);
+//
+//   //pad-out data with zeros for "missing" points..
+//   //(and 'mark' bad/missing points)
+//   _delta_omega.push_back({});
+//   auto &w_ref = _delta_omega.back();
+//   _data_ok.push_back({});
+//   auto &ok_ref = _data_ok.back();
+//   w_ref.reserve(tot_time);
+//   ok_ref.reserve(tot_time);
+//   {
+//     size_t j=0;
+//     for(int i=0; i<tot_time; i++){
+//       int tf = (int)round(times[j]);
+//       int t  = i_time + i;
+//       if(tf==t){
+//         w_ref.push_back(tmp_dw[j]);
+//         ok_ref.push_back(true);
+//         j++;
+//       }else{
+//         w_ref.push_back(0.);
+//         ok_ref.push_back(false);
+//       }
+//     }
+//   }
+//
+//   fetchClockInfo(in_fname);
+//
+//   return 0;
+// }
+
+
 //******************************************************************************
-int ClockNetwork::readInDataFile(const std::string &in_fname)
+int ClockNetwork::readInDataFile(const std::string &in_fname,
+  int tau_avg, int max_bad)
 //XXX Update for other formats!
 {
 
   std::vector<double> times;
   std::vector<double> tmp_dw;
-  std::cout<<"15\n"<<std::flush;
   int ok = DataIO::read_text_XY(in_fname,times,tmp_dw);
   if(ok!=0) return ok;
-  std::cout<<"18\n"<<std::flush;
 
   //initial_time = (times.front() - MJD_DAY_ZERO) * SECS_IN_DAY;
 
@@ -35,40 +95,95 @@ int ClockNetwork::readInDataFile(const std::string &in_fname)
   long f_time = (int)round(times.back());
   long tot_time = f_time - i_time + 1;
 
-  _initial_time.push_back(i_time);
-  _total_time.push_back(tot_time);
+  //_initial_time.push_back(i_time);
+  //_total_time.push_back(tot_time);
+
+  int mod_avg = i_time%tau_avg;
+  int ibeg = mod_avg==0 ? 0 : tau_avg - mod_avg;
+
+  long new_initial_time = i_time + ibeg;
+  if(new_initial_time%tau_avg !=0) std::cerr<<"\nFAIL CN 105\n";
+
+  _initial_time.push_back(new_initial_time);
 
   //pad-out data with zeros for "missing" points..
   //(and 'mark' bad/missing points)
-  _delta_omega.push_back({});
-  auto &w_ref = _delta_omega.back();
-  _data_ok.push_back({});
-  auto &ok_ref = _data_ok.back();
-  w_ref.reserve(tot_time);
-  ok_ref.reserve(tot_time);
+
+  //Tranfer data into temporary array, padding missing points w/ zeroes.
+  std::vector<double> w_tmp, ok_tmp;
+  w_tmp.reserve(tot_time);
+  ok_tmp.reserve(tot_time);
   {
     size_t j=0;
     for(int i=0; i<tot_time; i++){
       int tf = (int)round(times[j]);
       int t  = i_time + i;
       if(tf==t){
-        w_ref.push_back(tmp_dw[j]);
-        ok_ref.push_back(true);
+        w_tmp.push_back(tmp_dw[j]);
+        ok_tmp.push_back(true);
         j++;
       }else{
-        w_ref.push_back(0.);
-        ok_ref.push_back(false);
+        w_tmp.push_back(0.);
+        ok_tmp.push_back(false);
       }
     }
   }
-  std::cout<<"64\n"<<std::flush;
 
+  std::cout<<"137\n"<<std::flush;
+
+  _delta_omega.push_back({});
+  auto &w_ref = _delta_omega.back();
+  _data_ok.push_back({});
+  auto &ok_ref = _data_ok.back();
+  w_ref.reserve(tot_time/tau_avg);
+  ok_ref.reserve(tot_time/tau_avg);
+
+  //int max_bad = 0;
+  double oa_sum=0;
+  long oa_good=0;
+  long oa_bad=0;
+  for(int i=ibeg; i<tot_time-tau_avg; i+=tau_avg){
+    int bad = 0;
+    int good = 0;
+    double w_sum = 0;
+    bool new_ok = true;
+    for(int j=0; j<tau_avg; j++){
+      if(!ok_tmp[i+j]){
+        ++bad;
+        if(bad > max_bad){
+          w_sum = 0.;
+          new_ok = false;
+          break;
+        }
+        continue;
+      }
+      w_sum += w_tmp[i+j];
+      ++good;
+    }
+    double new_w = good>0? w_sum/good : 0;
+    w_ref.push_back(new_w);
+    ok_ref.push_back(new_ok);
+    if(new_ok){
+      oa_sum += new_w;
+      ++oa_good;
+    }else{
+      ++oa_bad;
+    }
+  }
+
+  double mean = oa_sum/oa_good;
+  //std::cout<<mean<<"\n";
+
+  _mean.push_back(mean);
+
+  // std::cout<<"\nhere:\n";
+  // std::cout<<oa_good<<" "<<oa_bad<<" = "<<oa_good+oa_bad<<" "<<w_ref.size()
+  //   <<" "<<ok_ref.size()<<" |"<<w_ref.size()*tau_avg<<" =? "<<w_tmp.size()<<"\n";
 
   fetchClockInfo(in_fname);
 
   return 0;
 }
-
 
 //******************************************************************************
 void ClockNetwork::fetchClockInfo(const std::string &fn)
