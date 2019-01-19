@@ -1,0 +1,14 @@
+/*
+# Except ...
+!*.cpp
+!.gitignore
+!Makefile
+!makefile
+!*.in
+!*.b
+!*.sh
+!*.md
+# All in source
+!src/
+src/*~
+src/*.o
