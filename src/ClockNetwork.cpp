@@ -229,3 +229,20 @@ void ClockNetwork::fetchClockInfo(const std::string &fn)
   // tau  = tau0;
 
 }
+
+//******************************************************************************
+void ClockNetwork::calculateSigma0()
+{
+  _sigma0.reserve(_delta_omega.size());
+  for(size_t i=0; i<_delta_omega.size(); i++){
+    double x0 = _mean[i];
+    double var = 0.;
+    long Npts = 0;
+    for(size_t j=0; j<_delta_omega[i].size(); j++){
+      if(!_data_ok[i][j]) continue;
+      var += pow(_delta_omega[i][j]-x0,2);
+      ++ Npts;
+    }
+    _sigma0.push_back(sqrt(var/Npts));
+  }
+}

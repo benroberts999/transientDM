@@ -34,4 +34,7 @@ int main(){
   std::cout<<net._delta_omega[1][1]<<"\n";
   std::cout<<net._initial_time[1]<<"\n";
 
+  net.calculateSigma0();
+  std::cout<<net._sigma0[0]<<" "<<net._sigma0[1]<<"\n";
+
 }

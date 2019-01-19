@@ -25,6 +25,7 @@ class ClockNetwork{
     std::vector<std::vector<bool> > _data_ok;
     std::vector<long> _initial_time;
     std::vector<double> _mean;
+    std::vector<double> _sigma0;
     // std::vector<long> _total_time;
 
     int tau_0 = 1;
@@ -55,9 +56,12 @@ class ClockNetwork{
 
   //private:
 
-    int readInDataFile_old(const std::string &in_fname);
+    //int readInDataFile_old(const std::string &in_fname);
     int readInDataFile(const std::string &in_fname,
       int tau_avg=1, int max_bad=0);
+
     void fetchClockInfo(const std::string &fn);
+
+    void calculateSigma0();
 
 };
