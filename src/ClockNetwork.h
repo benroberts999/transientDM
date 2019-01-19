@@ -28,6 +28,8 @@ class ClockNetwork{
     std::vector<double> _sigma0;
     // std::vector<long> _total_time;
 
+    std::vector<int> _ranked_index_list;
+
     int tau_0 = 1;
     int tau_avg;
 
@@ -63,5 +65,6 @@ class ClockNetwork{
     void fetchClockInfo(const std::string &fn);
 
     void calculateSigma0();
+    void rankClockPairs();
 
 };

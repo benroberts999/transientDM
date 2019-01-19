@@ -19,9 +19,10 @@ int main(){
 
   ClockNetwork net;
 
-  std::string fn="./data/cppdiff_PTBSr-PTBYb.dat";
-  net.readInDataFile(fn,2);
+  std::string
   fn="./data/cppdiff_SYRTEHg-PTBSr.dat";
+  net.readInDataFile(fn,2);
+  fn="./data/cppdiff_PTBSr-PTBYb.dat";
   net.readInDataFile(fn,2);
 
   //std::cout<<"X: "<<net.new_vector3[0]<<"\n";
@@ -36,5 +37,7 @@ int main(){
 
   net.calculateSigma0();
   std::cout<<net._sigma0[0]<<" "<<net._sigma0[1]<<"\n";
+
+  net.rankClockPairs();
 
 }

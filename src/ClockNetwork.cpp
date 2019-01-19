@@ -3,6 +3,7 @@
 #include "DataIO.h"
 #include <vector>
 #include <string>
+#include <algorithm>
 
 
 // //******************************************************************************
@@ -233,6 +234,8 @@ void ClockNetwork::fetchClockInfo(const std::string &fn)
 //******************************************************************************
 void ClockNetwork::calculateSigma0()
 {
+  if(_mean.size()==0) std::cerr<<"FAIL CN 237 - no mean?\n";
+
   _sigma0.reserve(_delta_omega.size());
   for(size_t i=0; i<_delta_omega.size(); i++){
     double x0 = _mean[i];
@@ -245,4 +248,53 @@ void ClockNetwork::calculateSigma0()
     }
     _sigma0.push_back(sqrt(var/Npts));
   }
+}
+
+
+
+//******************************************************************************
+bool sortcol( const std::vector<double>& v1,
+               const std::vector<double>& v2 ) {
+    return v1[0] > v2[0];
+}
+//******************************************************************************
+void ClockNetwork::rankClockPairs()
+{
+  bool print = true; //Just for testing!
+
+  /*
+    * Sorts clocks by
+  */
+  if(_sigma0.size()==0) std::cerr<<"FAIL CN 268 - no sigma?\n";
+
+  int N_tot_pairs = _sigma0.size();
+
+  std::vector< std::vector<double> > m;
+  for(int i=0; i<N_tot_pairs; i++){
+    double m_tmp = _sigma0[i]/fabs(_K_AB[i]);
+    m.push_back({m_tmp,(double)i+0.1});
+    //+0.1 to prevent rounding error when going from double -> int
+  }
+
+  // if(print){
+  //   std::cout<<"pre-sorting:\n";
+  //   for(int i=0; i<N_tot_pairs; i++)
+  //     std::cout<<m[i][1]<<" "<<m[i][0]<<" "<<_K_AB[i]
+  //     <<" "<<_sigma0[i]<<"\n";
+  //   std::cout<<"\n";
+  // }
+
+  std::sort(m.rbegin(), m.rend(), sortcol);
+  for(int i=0; i<N_tot_pairs; i++){
+    _ranked_index_list.push_back(int(m[i][1]));
+  }
+
+  // if(print){
+  //   std::cout<<"post-sorting:\n";
+  //   for(int i=0; i<N_tot_pairs; i++)
+  //   std::cout<<m[i][1]<<" "<<m[i][0]<<" "<<_K_AB[i]
+  //     <<" "<<_sigma0[i]<<"\n";
+  //   std::cout<<"\n";
+  // }
+
 }
