@@ -6,13 +6,16 @@ namespace DMsignalTemplate{
 const double sqrtPI = sqrt(M_PI);
 
 //******************************************************************************
-double s_Gaussian(double Kab, double tau0, double tau_int,
-  double t0, double tj)
+double s_Gaussian(double tau0, double tau_int,
+  double t0, double tj, double Kab)
 /*
 \delta\omega/\omega = \varphi(t_j)
 \varphi(t_j) = \deltaX * s(t_j)
 s(t_j) = 0.5 * K_ab * sqrt(pi) * (tau_int/tau_0)
         * [erf([t0-tj+tau0]/tau_int) - erf([t0-tj]/tau_int)]
+The default value of K=1
+This is because, often, template is _exactly_ the same for each clock,
+only K changes. So only need to call this function for _one_ clock!
 */
 {
   if(Kab==0) return 0;
@@ -23,8 +26,8 @@ s(t_j) = 0.5 * K_ab * sqrt(pi) * (tau_int/tau_0)
 }
 
 //***************************************************************************
-double s_topHat(double Kab, double tau0, double tau_int,
-  double t0, double tj)
+double s_topHat(double tau0, double tau_int,
+  double t0, double tj, double Kab)
 {
   if(Kab==0) return 0;
   double del_t = t0-tj;

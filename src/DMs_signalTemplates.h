@@ -1,10 +1,10 @@
 namespace DMsignalTemplate{
 
-double s_Gaussian(double Kab, double tau0, double tau_int,
-  double t0, double tj);
+double s_Gaussian(double tau0, double tau_int,
+  double t0, double tj, double Kab=1.);
 
-double s_topHat(double Kab, double tau0, double tau_int,
-  double t0, double tj);
+double s_topHat(double tau0, double tau_int,
+  double t0, double tj, double Kab=1.);
 
 double fastErf(double x);
 

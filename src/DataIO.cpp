@@ -26,6 +26,16 @@ return 2 = something worse happened.. bug in program, or data file is messed up
     x.clear();
     y.clear();
   }
+  /////
+  long number_of_lines = 0;
+  while (std::getline(ifs, str_line))
+        ++number_of_lines;
+  ifs.clear();
+  ifs.seekg(0, std::ios::beg);
+  //////////
+  x.reserve(x.size()+number_of_lines);
+  y.reserve(y.size()+number_of_lines);
+  //////////
   while(getline(ifs,str_line)){
     if(str_line.size()==0) continue;
     std::stringstream ss(str_line);

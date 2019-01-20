@@ -101,6 +101,20 @@ ClockNetwork::ClockNetwork(const std::vector<std::string> &filenames,
 
   std::cout<<"\n\n";
 
+  int expected_num_clocks = 20;
+  _delta_omega.reserve(expected_num_clocks);
+  _data_ok.reserve(expected_num_clocks);
+  _initial_time.reserve(expected_num_clocks);
+  _initial_epoch.reserve(expected_num_clocks);
+  _mean.reserve(expected_num_clocks);
+  _sigma0.reserve(expected_num_clocks);
+  _ranked_index_list.reserve(expected_num_clocks);
+  _clock_name_A.reserve(expected_num_clocks);
+  _clock_name_B.reserve(expected_num_clocks);
+  _K_A.reserve(expected_num_clocks);
+  _K_B.reserve(expected_num_clocks);
+  _K_AB.reserve(expected_num_clocks);
+
 }
 
 //******************************************************************************
@@ -119,6 +133,7 @@ XXX Add ability to force to use PTB-Sr-Yb
 {
 
   std::vector<std::string> clock_list;
+  clock_list.reserve(2*_ranked_index_list.size());
   indep_pairs.clear();
 
   for(auto i : _ranked_index_list){
@@ -200,20 +215,27 @@ void ClockNetwork::genSignalTemplate(std::vector<std::vector<double> > &s,
   //XXX also have integer tint_on_tau0 ?
 
   s.resize(_K_AB.size(), std::vector<double>(Jw));
-
-  // int t0 = Tw / 2 / _tau_0;
+  //XXX note: when creating s, _reserve_ enough space for largest JW!!
 
   double j0 = 0.5*Jw - 1.;
   double t0 = j0*_tau_0;
 
+  std::vector<double> sonK;
+  sonK.reserve(Jw);
+  for(int j=0; j<Jw; j++){
+    double tj = _tau_0*j;
+    sonK.push_back(DMsignalTemplate::s_Gaussian(_tau_0,tint,t0,tj));
+    // sonK[i] = DMsignalTemplate::s_topHat(Kab,_tau_0,tint,t0,tj);
+  }
+
   //std::cout<<"t0="<<t0<<", Jw="<<Jw<<", Tw="<<Jw*_tau_0<<"\n";
 
   for(size_t i=0; i<_K_AB.size(); i++){//loop through clocks
-    double Kab = _K_AB[i];
+    double Kabi = _K_AB[i];
     for(int j = 0; j < Jw; j++){
-      double tj = _tau_0*j;
-      //s[i][j] = DMsignalTemplate::s_Gaussian(Kab,_tau_0,tint,t0,tj);
-      s[i][j] = DMsignalTemplate::s_topHat(Kab,_tau_0,tint,t0,tj);
+      // double tj = _tau_0*j;
+      //s[i][j] = DMsignalTemplate::s_Gaussian(_tau_0,tint,t0,tj,Kab);
+      s[i][j] = Kabi*sonK[j];
     }
   }
 }
