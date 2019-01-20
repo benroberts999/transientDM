@@ -24,6 +24,7 @@ class ClockNetwork{
     std::vector<std::vector<double> > _delta_omega;
     std::vector<std::vector<bool> > _data_ok;
     std::vector<long> _initial_time;
+    std::vector<long> _initial_epoch;
     std::vector<double> _mean;
     std::vector<double> _sigma0;
     // std::vector<long> _total_time;
@@ -69,5 +70,9 @@ class ClockNetwork{
 
     void genSignalTemplate(std::vector<std::vector<double> > &s,
       int n_window, int tint_on_tau0) const;
+
+    std::vector<double> calculate_dHs_sHs(
+      const std::vector<int> &indep_pairs,
+      const std::vector<std::vector<double> > &s, long beg_epoch) const;
 
 };

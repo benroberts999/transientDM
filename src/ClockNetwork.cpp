@@ -67,6 +67,35 @@
 //   return 0;
 // }
 
+//******************************************************************************
+std::vector<double> ClockNetwork::calculate_dHs_sHs(
+  const std::vector<int> &indep_pairs,
+  const std::vector<std::vector<double> > &s, long beg_epoch) const
+/*
+beg_epoch is the begining epoch for the window
+(epoch is # _points_ since MJD_DAY_ZERO, i.e. time/tau_0)
+*/
+{
+  double dHs = 0.;
+  double sHs = 0.;
+  auto Jw = s[0].size();
+  for(auto i : indep_pairs){
+    double Hii = 1./pow(_sigma0[i],2);
+    double ss_i=0;
+    double ds_i=0;
+    long j_beg_i = beg_epoch - _initial_epoch[i];
+    for(auto j=0ul; j<Jw; j++){
+      double sij = s[i][j];
+      double dij = _delta_omega[i][j_beg_i + j];
+      ss_i += sij*sij;
+      ds_i += dij*sij;
+    }
+    sHs += Hii*ss_i;
+    dHs += Hii*ds_i;
+  }
+  return {dHs,sHs};
+}
+
 
 //******************************************************************************
 void ClockNetwork::genSignalTemplate(std::vector<std::vector<double> > &s,
@@ -141,6 +170,7 @@ int ClockNetwork::readInDataFile(const std::string &in_fname,
   if(new_initial_time%tau_avg !=0) std::cerr<<"\nFAIL CN 105\n";
 
   _initial_time.push_back(new_initial_time);
+  _initial_epoch.push_back(new_initial_time/tau_avg);
 
   //pad-out data with zeros for "missing" points..
   //(and 'mark' bad/missing points)
