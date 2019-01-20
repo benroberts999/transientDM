@@ -4,9 +4,11 @@
 
 const int MJD_DAY_ZERO = 57900;
 const int SECS_IN_DAY = 24*60*60;
-// class ClockData{
-//
-// };
+
+// namespace ClockNetwork{
+//   void getFileNames(std::vector<std::string> &fnames,
+//     const std::string &input_fn);
+// }
 
 enum class ClockAtom{Sr, Hg, YbII};
 
@@ -14,11 +16,13 @@ class ClockNetwork{
 
   public:
 
-    //ClockNetwork(); //std::vector<std::string> filenames, int tau_avg
+    ClockNetwork(const std::vector<std::string> &filenames, int tau_avg); //
 
     // double getK_AB();
 
-  //private:
+//  private:
+
+    const int _tau_0;
 
     // std::vector<std::vector<double> > raw_data;
     std::vector<std::vector<double> > _delta_omega;
@@ -31,7 +35,7 @@ class ClockNetwork{
 
     std::vector<int> _ranked_index_list;
 
-    int _tau_0 = 1;
+
     // int tau_avg;
 
     // std::vector<std::vector<double> > _avgd_delta_omega;
@@ -60,13 +64,14 @@ class ClockNetwork{
   //private:
 
     //int readInDataFile_old(const std::string &in_fname);
-    int readInDataFile(const std::string &in_fname,
-      int tau_avg=1, int max_bad=0);
+    int readInDataFile(const std::string &in_fname, int max_bad=0);
 
     void fetchClockInfo(const std::string &fn);
 
     void calculateSigma0();
     void rankClockPairs();
+
+    std::string name(int i) const;
 
     void genSignalTemplate(std::vector<std::vector<double> > &s,
       int n_window, int tint_on_tau0) const;

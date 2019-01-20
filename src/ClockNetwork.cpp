@@ -69,7 +69,45 @@
 
 
 
+// namespace ClockNetwork{
+//
+// }
 
+
+//******************************************************************************
+ClockNetwork::ClockNetwork(const std::vector<std::string> &filenames,
+  int tau_avg)
+  : _tau_0(tau_avg)
+{
+  std::cout<<"reading in: \n";
+  for(auto fn : filenames){
+    std::cout<<fn<<"\n";
+    readInDataFile(fn,0);
+  }
+  calculateSigma0();
+  rankClockPairs();
+
+  for(int i=0; i<(int)_sigma0.size(); i++){
+    std::cout<<name(i)<<": dK="<<_K_AB[i]<<", x0="<<_mean[i]
+    <<", s0="<<_sigma0[i]<<"\n";
+  }
+
+  std::cout<<"\n\n";
+
+  for(auto i : _ranked_index_list){
+    std::cout<<name(i)<<": dK="<<_K_AB[i]<<", x0="<<_mean[i]
+    <<", s0="<<_sigma0[i]<<"\n";
+  }
+
+  std::cout<<"\n\n";
+
+}
+
+//******************************************************************************
+std::string ClockNetwork::name(int i)const{
+  if(i>=0 && i<_clock_name_A.size())
+  return _clock_name_A[i]+"-"+_clock_name_B[i];
+}
 
 
 //******************************************************************************
@@ -168,7 +206,7 @@ void ClockNetwork::genSignalTemplate(std::vector<std::vector<double> > &s,
   double j0 = 0.5*Jw - 1.;
   double t0 = j0*_tau_0;
 
-  std::cout<<"t0="<<t0<<", Jw="<<Jw<<", Tw="<<Jw*_tau_0<<"\n";
+  //std::cout<<"t0="<<t0<<", Jw="<<Jw<<", Tw="<<Jw*_tau_0<<"\n";
 
   for(size_t i=0; i<_K_AB.size(); i++){//loop through clocks
     double Kab = _K_AB[i];
@@ -185,7 +223,7 @@ void ClockNetwork::genSignalTemplate(std::vector<std::vector<double> > &s,
 
 //******************************************************************************
 int ClockNetwork::readInDataFile(const std::string &in_fname,
-  int tau_avg, int max_bad)
+  int max_bad)
 //XXX Update for other formats!
 {
 
@@ -194,7 +232,8 @@ int ClockNetwork::readInDataFile(const std::string &in_fname,
   int ok = DataIO::read_text_XY(in_fname,times,tmp_dw);
   if(ok!=0) return ok;
 
-  _tau_0 = tau_avg; //XXX put this outside? XXX
+  int tau_avg = _tau_0;
+  //_tau_0 = tau_avg; //XXX put this outside? XXX
 
   //initial_time = (times.front() - MJD_DAY_ZERO) * SECS_IN_DAY;
 
@@ -249,7 +288,7 @@ int ClockNetwork::readInDataFile(const std::string &in_fname,
     }
   }
 
-  std::cout<<"137\n"<<std::flush;
+  //std::cout<<"137\n"<<std::flush;
 
   _delta_omega.push_back({});
   auto &w_ref = _delta_omega.back();
@@ -261,7 +300,7 @@ int ClockNetwork::readInDataFile(const std::string &in_fname,
   //int max_bad = 0;
   double oa_sum=0;
   long oa_good=0;
-  long oa_bad=0;
+  //long oa_bad=0;
   for(int i=ibeg; i<tot_time-tau_avg; i+=tau_avg){
     int bad = 0;
     int good = 0;
@@ -286,9 +325,10 @@ int ClockNetwork::readInDataFile(const std::string &in_fname,
     if(new_ok){
       oa_sum += new_w;
       ++oa_good;
-    }else{
-      ++oa_bad;
     }
+    // else{
+    //   ++oa_bad;
+    // }
   }
 
   double mean = oa_sum/oa_good;

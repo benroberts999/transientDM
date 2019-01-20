@@ -1,0 +1,19 @@
+# '!' or '#' denotes comment - code will skip that line.
+# First line is absolute directory. Then file names.
+!/obs/broberts/data_syrte/data/
+./data/
+cppdiff_NPLSr-NPLYb.dat
+cppdiff_PTBSr-NPLSr.dat
+cppdiff_PTBSr-NPLYb.dat
+cppdiff_PTBSr-PTBYb.dat
+cppdiff_PTBYb-NPLSr.dat
+cppdiff_PTBYb-NPLYb.dat
+cppdiff_SYRTEHg-NPLSr.dat
+cppdiff_SYRTEHg-NPLYb.dat
+cppdiff_SYRTEHg-PTBSr.dat
+cppdiff_SYRTEHg-PTBYb.dat
+cppdiff_SYRTESr2-NPLSr.dat
+cppdiff_SYRTESr2-PTBYb.dat
+cppdiff_SYRTESrB-NPLSr.dat
+cppdiff_SYRTESrB-PTBYb.dat
+cppdiff_SYRTESrB-SYRTESr2.dat
