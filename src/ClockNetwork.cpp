@@ -67,6 +67,60 @@
 //   return 0;
 // }
 
+
+
+
+
+
+//******************************************************************************
+void ClockNetwork::formIndependentSubnet(std::vector<int> &indep_pairs,
+  long beg_epoch, int Jw, int max_bad) const
+/*
+XXX Add ability to force to use PTB-Sr-Yb
+*/
+{
+
+  std::vector<std::string> clock_list;
+  indep_pairs.clear();
+
+  for(auto i : _ranked_index_list){
+    //Check bounds:
+    long j_beg_i = beg_epoch - _initial_epoch[i];
+    if(j_beg_i < 0) continue;//BAD
+
+    long final_epoch_i = _initial_epoch[i] + _delta_omega[i].size();
+    if(final_epoch_i < beg_epoch + Jw) continue;
+    //XXX Check for off-by-one errors!
+
+    int bad = 0;
+    for(long j = 0; j<Jw; j++){
+      if(!_data_ok[i][j_beg_i + j]){
+        ++bad;
+        if(bad > max_bad) break;
+      }
+    }
+    if(bad > max_bad) continue;
+
+    // bool already = (std::find(clock_list.begin(), clock_list.end(),
+    // this_clock) != clock_list.end());
+    bool already = false;
+    for(auto clk : clock_list){
+      if (clk == _clock_name_A[i] || clk == _clock_name_B[i]){
+        already = true;
+        break;
+      }
+    }
+    if(already) continue;
+
+    clock_list.push_back(_clock_name_A[i]);
+    clock_list.push_back(_clock_name_B[i]);
+    indep_pairs.push_back(i);
+  }
+
+}
+
+
+
 //******************************************************************************
 std::vector<double> ClockNetwork::calculate_dHs_sHs(
   const std::vector<int> &indep_pairs,

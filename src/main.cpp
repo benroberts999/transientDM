@@ -49,4 +49,9 @@ int main(){
     std::cout<<"\n";
   }
 
+  std::vector<int> indep_pairs;
+  net.formIndependentSubnet(indep_pairs,566818,10,0);
+  for(auto i : indep_pairs)
+    std::cout<<i<<"\n";
+
 }

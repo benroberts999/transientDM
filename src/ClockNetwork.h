@@ -75,4 +75,7 @@ class ClockNetwork{
       const std::vector<int> &indep_pairs,
       const std::vector<std::vector<double> > &s, long beg_epoch) const;
 
+    void formIndependentSubnet(std::vector<int> &indep_pairs,
+      long beg_epoch, int Jw, int max_bad) const;
+
 };
