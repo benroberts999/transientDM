@@ -30,8 +30,8 @@ class ClockNetwork{
 
     std::vector<int> _ranked_index_list;
 
-    int tau_0 = 1;
-    int tau_avg;
+    int _tau_0 = 1;
+    // int tau_avg;
 
     // std::vector<std::vector<double> > _avgd_delta_omega;
     // std::vector<std::vector<bool> > _avgd_data_ok;
@@ -66,5 +66,8 @@ class ClockNetwork{
 
     void calculateSigma0();
     void rankClockPairs();
+
+    void genSignalTemplate(std::vector<std::vector<double> > &s,
+      int n_window, int tint_on_tau0) const;
 
 };

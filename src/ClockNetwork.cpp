@@ -1,6 +1,7 @@
 #include "ClockNetwork.h"
 #include "ClockInfo.h"
 #include "DataIO.h"
+#include "DMs_signalTemplates.h"
 #include <vector>
 #include <string>
 #include <algorithm>
@@ -68,6 +69,38 @@
 
 
 //******************************************************************************
+void ClockNetwork::genSignalTemplate(std::vector<std::vector<double> > &s,
+  int n_window, int tint_on_tau0) const
+{
+  int Jw = n_window * tint_on_tau0;
+  if(Jw%2 == 0) ++Jw; // Jw must be odd
+
+  int tint = tint_on_tau0 * _tau_0;
+  //XXX also have integer tint_on_tau0 ?
+
+  s.resize(_K_AB.size(), std::vector<double>(Jw));
+
+  // int t0 = Tw / 2 / _tau_0;
+
+  double j0 = 0.5*Jw - 1.;
+  double t0 = j0*_tau_0;
+
+  std::cout<<"t0="<<t0<<", Jw="<<Jw<<", Tw="<<Jw*_tau_0<<"\n";
+
+  for(size_t i=0; i<_K_AB.size(); i++){//loop through clocks
+    double Kab = _K_AB[i];
+    for(int j = 0; j < Jw; j++){
+      double tj = _tau_0*j;
+      //s[i][j] = DMsignalTemplate::s_Gaussian(Kab,_tau_0,tint,t0,tj);
+      s[i][j] = DMsignalTemplate::s_topHat(Kab,_tau_0,tint,t0,tj);
+    }
+  }
+}
+
+
+
+
+//******************************************************************************
 int ClockNetwork::readInDataFile(const std::string &in_fname,
   int tau_avg, int max_bad)
 //XXX Update for other formats!
@@ -77,6 +110,8 @@ int ClockNetwork::readInDataFile(const std::string &in_fname,
   std::vector<double> tmp_dw;
   int ok = DataIO::read_text_XY(in_fname,times,tmp_dw);
   if(ok!=0) return ok;
+
+  _tau_0 = tau_avg; //XXX put this outside? XXX
 
   //initial_time = (times.front() - MJD_DAY_ZERO) * SECS_IN_DAY;
 

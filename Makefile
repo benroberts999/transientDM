@@ -16,7 +16,7 @@ $(info )
 $(info Detected operating system: $(detected_OS))
 $(info )
 
-LIBS=-lgsl -lgslcblas -lm
+LIBS=-lgsl -lgslcblas #-lm
 
 #Command to compile objects and link them
 COMP=$(CXX) -c -o $@ $< $(CXXFLAGS)
@@ -57,7 +57,8 @@ $(OD)/main.o: $(ID)/main.cpp $(COMH) $(ID)/ClockNetwork.h $(ID)/DataIO.h
 ################################################################################
 # Link + build all final programs
 
-$(XD)/main: $(OD)/main.o $(OD)/ClockNetwork.o $(OD)/DataIO.o
+$(XD)/main: $(OD)/main.o $(OD)/ClockNetwork.o $(OD)/DataIO.o \
+$(OD)/DMs_signalTemplates.o
 	$(LINK)
 
 ################################################################################
