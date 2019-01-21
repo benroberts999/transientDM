@@ -3,7 +3,7 @@
 
 namespace DMsignalTemplate{
 
-const double sqrtPI = sqrt(M_PI);
+static double sqrtPI = sqrt(M_PI);
 
 //******************************************************************************
 double s_Gaussian(double tau0, double tau_int,
@@ -28,10 +28,12 @@ only K changes. So only need to call this function for _one_ clock!
 //***************************************************************************
 double s_topHat(double , double tau_int,
   double t0, double tj, double Kab)
+/*
+As above, but for top-hat (flat) profile
+*/
 {
   if(Kab==0) return 0;
   double del_t = t0-tj;
-  // if (del_t>tau_int) return 0.;
   if(del_t >= -0.5*tau_int && del_t < 0.5*tau_int) return Kab;
   return 0.;
 }

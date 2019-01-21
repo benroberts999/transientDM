@@ -8,7 +8,6 @@
 #include "ChronoTimer.h"
 #include <array>
 
-
 //******************************************************************************
 void getFileNames(std::vector<std::string> &fnames,
   const std::string &input_fn)
@@ -36,6 +35,7 @@ Any line that begines with '!' or '#' is ignored
   }
   ifs.close();
 }
+
 
 //******************************************************************************
 void defineIntegerLogGrid(std::vector<int> &grid, int min, int max, int N)
@@ -101,7 +101,7 @@ int main(){
   long j_init = (long) (iday*24*60*60 / tau_avg); //in epochs!
   long j_fin = (long) ((fday*24*60*60 + 1) / tau_avg);
   //
-  std::cout<<"Running for days (since MJD:"<<MJD_DAY_ZERO<<"): "
+  std::cout<<"Running for days (since MJD:"<<CNconsts::MJD_DAY_ZERO<<"): "
     <<j_init*tau_avg/(24*60*60)<<" -> "<<j_fin*tau_avg/(24*60*60)<<"\n";
   std::cout<<"= "<<j_init*tau_avg<<" -> "<<j_fin*tau_avg<<" s\n";
   std::cout<<"= "<<j_init<<" -> "<<j_fin<<" epochs (w/ tau_0=tau_avg = "

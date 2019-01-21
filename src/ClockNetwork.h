@@ -2,19 +2,15 @@
 #include <vector>
 #include <string>
 
-const int MJD_DAY_ZERO = 57900;
-const int SECS_IN_DAY = 24*60*60;
-
-// namespace ClockNetwork{
-//   void getFileNames(std::vector<std::string> &fnames,
-//     const std::string &input_fn);
-// }
+namespace CNconsts{
+  const int MJD_DAY_ZERO = 57900;
+  const int SECS_IN_DAY = 24*60*60;
+}
 
 enum class ClockAtom{Sr, Hg, YbII};
-
 enum class TDProfile{Gaussian, Flat};
 
-
+//******************************************************************************
 struct Result_xHs{
 
   Result_xHs(double dHs, double sHs)
@@ -25,6 +21,7 @@ struct Result_xHs{
 
 };
 
+//******************************************************************************
 class ClockNetwork{
 
   public:

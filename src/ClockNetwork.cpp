@@ -4,107 +4,43 @@
 #include "DMs_signalTemplates.h"
 #include <vector>
 #include <string>
-#include <algorithm>
+#include <algorithm> //for sort
 
-
-// //******************************************************************************
-// int ClockNetwork::readInDataFile_old(const std::string &in_fname)
-// //XXX Update for other formats!
-// {
-//
-//   std::vector<double> times;
-//   std::vector<double> tmp_dw;
-//   int ok = DataIO::read_text_XY(in_fname,times,tmp_dw);
-//   if(ok!=0) return ok;
-//
-//   //initial_time = (times.front() - MJD_DAY_ZERO) * SECS_IN_DAY;
-//
-//   //time stored as seconds since MJD
-//
-//   //re-scale and shift data points.
-//   //Input file times in units of days (MJD).
-//   //I want in units of seconds, since MJD_DAY_ZERO = 57900
-//   double t_offset = MJD_DAY_ZERO;
-//   double t_scale = SECS_IN_DAY;
-//   for(size_t i=0; i<times.size(); i++){
-//     times[i] -= t_offset;
-//     times[i] *= t_scale;
-//   }
-//
-//   long i_time = (int)round(times.front());
-//   long f_time = (int)round(times.back());
-//   long tot_time = f_time - i_time + 1;
-//
-//   _initial_time.push_back(i_time);
-//   _total_time.push_back(tot_time);
-//
-//   //pad-out data with zeros for "missing" points..
-//   //(and 'mark' bad/missing points)
-//   _delta_omega.push_back({});
-//   auto &w_ref = _delta_omega.back();
-//   _data_ok.push_back({});
-//   auto &ok_ref = _data_ok.back();
-//   w_ref.reserve(tot_time);
-//   ok_ref.reserve(tot_time);
-//   {
-//     size_t j=0;
-//     for(int i=0; i<tot_time; i++){
-//       int tf = (int)round(times[j]);
-//       int t  = i_time + i;
-//       if(tf==t){
-//         w_ref.push_back(tmp_dw[j]);
-//         ok_ref.push_back(true);
-//         j++;
-//       }else{
-//         w_ref.push_back(0.);
-//         ok_ref.push_back(false);
-//       }
-//     }
-//   }
-//
-//   fetchClockInfo(in_fname);
-//
-//   return 0;
-// }
-
-
-
-// namespace ClockNetwork{
-//
-// }
-
-
-
-//******************************************************************************
-int ClockNetwork::get_NtotPairs() const
-{
-  return (int) _mean.size();
-}
 
 //******************************************************************************
 ClockNetwork::ClockNetwork(const std::vector<std::string> &filenames,
   int tau_avg, int max_bad)
   : _tau_0(tau_avg)
+/*
+Note: Everywhere inside assumes white noise.
+Therefore, tau_avg must be chosen to be large enough for this to be true!
+There are no checks for this
+*/
 {
 
+  //Read in and average the raw data.
   for(size_t i=0; i<filenames.size(); i++){
     std::cout<<"Reading input data file: "<<i+1<<"/"<<filenames.size()
-    // <<" ("<<filenames[i]<<")"
     <<"         \r"<<std::flush;
     readInDataFile(filenames[i],max_bad);
   }
   std::cout<<"\n\n";
 
-
+  //calculate sigma for each clock (at given tau_avg!) + ranks the clocks
   calculateSigma0();
   rankClockPairs();
 
+  //print a summary of clocks
   std::cout<<"Network summary:\n";
+  for(int i=0; i<57; i++) std::cout<<"_";
+  std::cout<<"\n";
   for(auto i : _ranked_index_list){
-    printf("%17s: dK=%5.2f, x0=%8.1e, sig=%8.1e\n",name(i).c_str(),_K_AB[i],
+    printf("|%17s: dK=%5.2f, x0=%8.1e, sig=%8.1e |\n",name(i).c_str(),_K_AB[i],
       _mean[i],_sigma0[i]);
   }
-  std::cout<<"\n";
+  std::cout<<"|";
+  for(int i=0; i<55; i++) std::cout<<"_";
+  std::cout<<"|\n";
 
   //Reserve space in vectors (this doesn't help too much)
   int expected_num_clocks = (int) filenames.size();
@@ -130,13 +66,22 @@ std::string ClockNetwork::name(int i)const{
   else return "";
 }
 
+//******************************************************************************
+int ClockNetwork::get_NtotPairs() const
+{
+  return (int) _mean.size();
+}
 
 //******************************************************************************
 void ClockNetwork::formIndependentSubnet(std::vector<int> &indep_pairs,
   long beg_epoch, int Jw, int max_bad,
   bool force_PTB_SrYb, bool force_SyrHbNplYb) const
 /*
-XXX Add ability to force to use PTB-Sr-Yb
+Forms a "sub-network" of only indepedent clock pairs.
+(That is, no single clock is included more than once).
+Stores the _index_'s for each clock-pair in this subnet in indep_pairs
+Note: uses _ranked_index_list - i.e. which contains a list of _all_ clock-pair
+indexes, in order of best to worst! (by sigma^2/kappa)
 */
 {
 
@@ -145,14 +90,13 @@ XXX Add ability to force to use PTB-Sr-Yb
   indep_pairs.clear();
 
   for(auto i : _ranked_index_list){
-    //Check bounds:
+    //Check bounds (make sure this clock pair has recorded data during window):
     long j_beg_i = beg_epoch - _initial_epoch[i];
-    if(j_beg_i < 0) continue;//BAD
-
+    if(j_beg_i < 0) continue;
     long final_epoch_i = _initial_epoch[i] + _delta_omega[i].size();
     if(final_epoch_i < beg_epoch + Jw) continue;
-    //XXX Check for off-by-one errors!
 
+    //Count number of 'skipped' points in this window.
     int bad = 0;
     for(long j = 0; j<Jw; j++){
       if(!_data_ok[i][j_beg_i + j]){
@@ -162,8 +106,7 @@ XXX Add ability to force to use PTB-Sr-Yb
     }
     if(bad > max_bad) continue;
 
-    // bool already = (std::find(clock_list.begin(), clock_list.end(),
-    // this_clock) != clock_list.end());
+    //Check if one of the two clocks for this pair is already chosen:
     bool already = false;
     for(auto clk : clock_list){
       if (clk == _clock_name_A[i] || clk == _clock_name_B[i]){
@@ -173,12 +116,17 @@ XXX Add ability to force to use PTB-Sr-Yb
     }
     if(already) continue;
 
+    //If got here, this clock pair is good! Store names to check next clock
+    //and store index in output: indep_pairs
     clock_list.push_back(_clock_name_A[i]);
     clock_list.push_back(_clock_name_B[i]);
     indep_pairs.push_back(i);
   }
 
-  // bool force_PTB_SrYb = true;
+  // Option to ONLY use data when particular clocks are present.
+  // This is hard-coded for now....
+  //If the required clocks are not present, clear the list. Use no clocks.
+  //(there is a faster way to do this, but it's v. messy)
   if(force_PTB_SrYb){
     bool found = false;
     for(auto i : indep_pairs){
@@ -197,7 +145,6 @@ XXX Add ability to force to use PTB-Sr-Yb
 }
 
 
-
 //******************************************************************************
 Result_xHs ClockNetwork::calculate_dHs_sHs(
   const std::vector<int> &indep_pairs,
@@ -205,6 +152,7 @@ Result_xHs ClockNetwork::calculate_dHs_sHs(
 /*
 beg_epoch is the begining epoch for the window
 (epoch is # _points_ since MJD_DAY_ZERO, i.e. time/tau_0)
+Note: stores the result in a custom struct: "Result_xHs" [defn in CN header]
 */
 {
   double dHs = 0.;
@@ -224,7 +172,7 @@ beg_epoch is the begining epoch for the window
     sHs += Hii*ss_i;
     dHs += Hii*ds_i;
   }
-  return Result_xHs(dHs,sHs);
+  return Result_xHs(dHs,sHs); //order here matters: dHs, THEN sHs
 }
 
 
@@ -232,36 +180,45 @@ beg_epoch is the begining epoch for the window
 void ClockNetwork::genSignalTemplate(std::vector<std::vector<double> > &s,
   int n_window, int j_int, TDProfile profile) const
 /*
-j_int := tau_int / tau_0
+Creates a signal-template vector, s, for each clock pair:
+Defined:
+  \delta\omega/\omega = \varphi(t_j)
+  \varphi(t_j) = \deltaX * s(t_j)
+Exact form of s depends on profile; given as input (Gaussian or Flat)
+Note: Explicitely assumes coincident case!
+Note: j_int := tau_int / tau_0
 */
 {
+  //Calculate the window size:
   int Jw = n_window * j_int;
   if(Jw%2 == 0) ++Jw; // Jw must be odd
 
   int tint = j_int * _tau_0;
-
-  s.resize(_K_AB.size(), std::vector<double>(Jw));
-  //XXX note: when creating s, _reserve_ enough space for largest JW!!
-
   double j0 = 0.5*Jw - 1.;
   double t0 = j0*_tau_0;
 
-  //Define a function pointer, to switch between
+  //Define a function pointer, to switch between TD profile options
   double (*dmSignal)(double, double, double, double, double);
   switch(profile){
     case TDProfile::Gaussian : dmSignal = &DMsignalTemplate::s_Gaussian;
       break;
     case TDProfile::Flat : dmSignal = &DMsignalTemplate::s_topHat;
+      break;
+    default : std::cerr<<"\nFAIL CN 187: invalid template option?\n";
   }
 
-
+  //Create vector of s/K_AB.
+  // s if different for each clock, but s/K_AB is the same!
+  // This is _only_ true for the coincident case
   std::vector<double> sonK;
   sonK.reserve(Jw);
   for(int j=0; j<Jw; j++){
     double tj = _tau_0*j;
-    sonK.emplace_back(dmSignal(_tau_0,tint,t0,tj,1));
+    sonK.emplace_back(dmSignal(_tau_0,tint,t0,tj,1.));
   }
 
+  //Write signal-template s
+  s.resize(_K_AB.size(), std::vector<double>(Jw));
   for(size_t i=0; i<_K_AB.size(); i++){//loop through clocks
     double Kabi = _K_AB[i];
     for(int j = 0; j<Jw; j++) s[i][j] = Kabi*sonK[j];
@@ -270,11 +227,13 @@ j_int := tau_int / tau_0
 }
 
 
-
-
 //******************************************************************************
 int ClockNetwork::readInDataFile(const std::string &in_fname, int max_bad)
 //XXX Update for other formats!
+/*
+Time stored as seconds since MJD.
+Epochs are time / tau_0
+*/
 {
 
   std::vector<double> times;
@@ -282,17 +241,15 @@ int ClockNetwork::readInDataFile(const std::string &in_fname, int max_bad)
   int ok = DataIO::read_text_XY(in_fname,times,tmp_dw);
   if(ok!=0) return ok;
 
-  int tau_avg = _tau_0;
-
-  //initial_time = (times.front() - MJD_DAY_ZERO) * SECS_IN_DAY;
+  int tau_avg = _tau_0; //already stores in class
 
   //time stored as seconds since MJD
 
   //re-scale and shift data points.
   //Input file times in units of days (MJD).
   //I want in units of seconds, since MJD_DAY_ZERO = 57900
-  double t_offset = MJD_DAY_ZERO;
-  double t_scale = SECS_IN_DAY;
+  double t_offset = CNconsts::MJD_DAY_ZERO;
+  double t_scale = CNconsts::SECS_IN_DAY;
   for(size_t i=0; i<times.size(); i++){
     times[i] -= t_offset;
     times[i] *= t_scale;
@@ -301,9 +258,6 @@ int ClockNetwork::readInDataFile(const std::string &in_fname, int max_bad)
   long i_time = (int)round(times.front());
   long f_time = (int)round(times.back());
   long tot_time = f_time - i_time + 1;
-
-  //_initial_time.push_back(i_time);
-  //_total_time.push_back(tot_time);
 
   int mod_avg = (int) (i_time%((long)tau_avg));
   int ibeg = mod_avg==0 ? 0 : tau_avg - mod_avg;
@@ -316,7 +270,6 @@ int ClockNetwork::readInDataFile(const std::string &in_fname, int max_bad)
 
   //pad-out data with zeros for "missing" points..
   //(and 'mark' bad/missing points)
-
   //Tranfer data into temporary array, padding missing points w/ zeroes.
   std::vector<double> w_tmp, ok_tmp;
   w_tmp.reserve(tot_time);
@@ -337,15 +290,15 @@ int ClockNetwork::readInDataFile(const std::string &in_fname, int max_bad)
     }
   }
 
-  //std::cout<<"137\n"<<std::flush;
-
+  //Copy the temp. arrays into the actual arrays.
+  //Note: Technically, faster to all at once (+ avoid large copy)
+  //But would be quite complicated
   _delta_omega.push_back({});
   auto &w_ref = _delta_omega.back();
   _data_ok.push_back({});
   auto &ok_ref = _data_ok.back();
   w_ref.reserve(tot_time/tau_avg);
   ok_ref.reserve(tot_time/tau_avg);
-
   double oa_sum=0;
   long oa_good=0;
   for(long i=ibeg; i<tot_time-tau_avg; i+=tau_avg){
@@ -377,11 +330,12 @@ int ClockNetwork::readInDataFile(const std::string &in_fname, int max_bad)
 
   //store the mean:
   _mean.emplace_back(oa_sum/double(oa_good));
-
+  //Get clock info (K's, lab positions etc.)
   fetchClockInfo(in_fname);
 
   return 0;
 }
+
 
 //******************************************************************************
 void ClockNetwork::fetchClockInfo(const std::string &fn)
@@ -426,6 +380,7 @@ void ClockNetwork::fetchClockInfo(const std::string &fn)
 
 }
 
+
 //******************************************************************************
 void ClockNetwork::calculateSigma0()
 {
@@ -446,50 +401,36 @@ void ClockNetwork::calculateSigma0()
 }
 
 
-
 //******************************************************************************
-bool sortcol( const std::vector<double>& v1,
-               const std::vector<double>& v2 ) {
-    return v1[0] > v2[0];
+bool sortcol(const std::vector<double>& v1, const std::vector<double>& v2)
+{
+  //Lambda to sort cols of one vector by another
+  return v1[0] > v2[0];
 }
 //******************************************************************************
 void ClockNetwork::rankClockPairs()
+/*
+"Sorts" the clock pairs by "Goodness"
+Goodness is defined as K_AB/sigma^2 - effective sensitivity of each clock.
+Note: doesn't sort the actual data, just stores the indexes of each clock
+in the correct 'sorted' order, in the member variable list: _ranked_index_list
+*/
 {
-  //bool print = true; //Just for testing!
-
-  /*
-    * Sorts clocks by
-  */
   if(_sigma0.size()==0) std::cerr<<"FAIL CN 268 - no sigma?\n";
 
   int N_tot_pairs = (int) _sigma0.size();
 
   std::vector< std::vector<double> > m;
+  m.reserve(N_tot_pairs);
   for(int i=0; i<N_tot_pairs; i++){
-    double m_tmp = _sigma0[i]/fabs(_K_AB[i]);
-    m.push_back({m_tmp,(double)i+0.1});
+    double m_tmp = pow(_sigma0[i],1)/fabs(_K_AB[i]);
+    m.emplace_back(std::initializer_list<double>{m_tmp,(double)i+0.1});
     //+0.1 to prevent rounding error when going from double -> int
   }
 
-  // if(print){
-  //   std::cout<<"pre-sorting:\n";
-  //   for(int i=0; i<N_tot_pairs; i++)
-  //     std::cout<<m[i][1]<<" "<<m[i][0]<<" "<<_K_AB[i]
-  //     <<" "<<_sigma0[i]<<"\n";
-  //   std::cout<<"\n";
-  // }
-
   std::sort(m.rbegin(), m.rend(), sortcol);
-  for(int i=0; i<N_tot_pairs; i++){
-    _ranked_index_list.push_back(int(m[i][1]));
-  }
 
-  // if(print){
-  //   std::cout<<"post-sorting:\n";
-  //   for(int i=0; i<N_tot_pairs; i++)
-  //   std::cout<<m[i][1]<<" "<<m[i][0]<<" "<<_K_AB[i]
-  //     <<" "<<_sigma0[i]<<"\n";
-  //   std::cout<<"\n";
-  // }
+  for(int i=0; i<N_tot_pairs; i++)
+    _ranked_index_list.push_back(int(m[i][1]));
 
 }
