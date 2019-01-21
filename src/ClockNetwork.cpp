@@ -73,6 +73,12 @@ int ClockNetwork::get_NtotPairs() const
 }
 
 //******************************************************************************
+int ClockNetwork::get_tau0() const
+{
+  return _tau_0;
+}
+
+//******************************************************************************
 void ClockNetwork::formIndependentSubnet(std::vector<int> &indep_pairs,
   long beg_epoch, int Jw, int max_bad,
   bool force_PTB_SrYb, bool force_SyrHbNplYb) const

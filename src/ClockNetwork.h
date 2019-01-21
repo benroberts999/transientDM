@@ -83,6 +83,7 @@ class ClockNetwork{
     void rankClockPairs();
 
     int get_NtotPairs() const;
+    int get_tau0() const;
 
     std::string name(int i) const;
 

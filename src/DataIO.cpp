@@ -8,6 +8,34 @@
 namespace DataIO{
 
 //******************************************************************************
+void getFileNames(std::vector<std::string> &fnames, const std::string &input_fn)
+/*
+Opens an input text files (called: input_fn)
+Reads each line into an array.
+First line of text-file is an absolute (or relative) path name.
+Each subsequent line contains just the file names.
+Any line that begines with '!' or '#' is ignored
+*/
+{
+  std::ifstream ifs;
+  ifs.open(input_fn);
+  std::string path="";
+  std::string str;
+  bool header = true;
+  while(getline(ifs,str)){
+    if(str.substr(0,1)=="!"||str.substr(0,1)=="#") continue;
+    if(header){
+      path = str;
+      header = false;
+    }else{
+      fnames.push_back(path+str);
+    }
+  }
+  ifs.close();
+}
+
+
+//******************************************************************************
 template <typename T, typename U>
 int read_text_XY(const std::string &in_fname, std::vector<T> &x,
     std::vector<U> &y, bool append)

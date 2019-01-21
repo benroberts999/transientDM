@@ -26,7 +26,7 @@ LINK=$(CXX) -o $@ $^ $(CXXFLAGS) $(LIBS)
 
 #Allow exectuables to be placed in another directory:
 ALLEXES = $(addprefix $(XD)/, \
- main \
+ main transientDM \
 )
 
 #default tagret
@@ -55,8 +55,16 @@ $(OD)/main.o: $(ID)/main.cpp $(COMH) $(ID)/ClockNetwork.h $(ID)/DataIO.h \
 $(ID)/ChronoTimer.h
 	$(COMP)
 
+$(OD)/transientDM.o: $(ID)/transientDM.cpp $(COMH) $(ID)/ClockNetwork.h \
+$(ID)/DataIO.h $(ID)/ChronoTimer.h
+	$(COMP)
+
 ################################################################################
 # Link + build all final programs
+
+$(XD)/transientDM: $(OD)/transientDM.o $(OD)/ClockNetwork.o $(OD)/DataIO.o \
+$(OD)/DMs_signalTemplates.o $(OD)/ChronoTimer.o
+	$(LINK)
 
 $(XD)/main: $(OD)/main.o $(OD)/ClockNetwork.o $(OD)/DataIO.o \
 $(OD)/DMs_signalTemplates.o $(OD)/ChronoTimer.o
