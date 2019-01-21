@@ -67,6 +67,8 @@ But, it _is_ guarenteed to be exactly N elements long
 
 //******************************************************************************
 int main(){
+  ChronoTimer timer;
+  timer.start();
 
   std::vector<std::string> filenames;
   getFileNames(filenames,"./clocklist.in");
@@ -83,9 +85,9 @@ int main(){
 
 
 
-  ChronoTimer timer;
   timer.start();
   ClockNetwork net(filenames,tau_avg,max_bad_avg);
+  timer.start();
   std::cout<<"Timer: "<<timer.lap_reading_str()<<"\n\n";
 
   int N_tot_pairs = net.get_NtotPairs();
@@ -126,19 +128,18 @@ int main(){
     s.reserve(N_tot_pairs);
 
     // Jw = nJeffW*j_eff, or nJeffW*j_eff+1  (Jw must be odd)
-    //XXX make above an input option!! XXX
+
     net.genSignalTemplate(s,nJeffW,j_eff, TDProfile::Gaussian);
     int Jw = s[0].size();
 
-    double max_da = 0;
-    double Del_da = 0;
-
-    int j_step = 1;//tau_avg; XXX
+    int j_step = 1;
     //OR j_eff, or j_eff/2 (minimum of 1, must be int!)
-    j_step = j_eff/2;
+    j_step = j_eff/2;  //XXX make an input option!! XXX
     if(j_step==0) j_step = 1;
 
     int num_j_used = 0;
+    double max_da = 0;
+    double Del_da = 0;
     for(long jbeg = j_init; jbeg<=j_fin; jbeg+=j_step){
 
       int max_bad = 0;
@@ -170,50 +171,5 @@ int main(){
   }
 
 
-  //
-  //
-  //
-  //
-  // std::cout<<net._sigma0[0]<<" "<<net._sigma0[1]<<"\n";
-  //
-  //
-  //
-  // std::vector<std::vector<double> > s;
-  // net.genSignalTemplate(s,1,3);
-  // for(size_t i=0; i<s.size(); i++){
-  //   for(size_t j=0; j<s[i].size(); j++){
-  //     std::cout<<s[i][j]/net._K_AB[i]<<" ";
-  //   }
-  //   std::cout<<"\n";
-  // }
-  //
-  // for(auto i : net._ranked_index_list)
-  //   std::cout<<net._initial_epoch[i]<<"\n";
-  //
-  // std::vector<int> indep_pairs;
-  // net.formIndependentSubnet(indep_pairs,26829,10,0);
-  // for(auto i : indep_pairs){
-  //   std::cout<<i<<"\n";
-  //   std::cout<<net._clock_name_A[i]<<"-"<<net._clock_name_B[i]<<"\n";
-  // }
-  //
-  // auto dHs_sHs = net.calculate_dHs_sHs(indep_pairs,s,26829);
-  // std::cout<<dHs_sHs[0]/dHs_sHs[1]<<"\n";
-  //
-  // for(int i=1; i<15; i++){
-  //   int tau_int_on_tau = i;
-  //
-  //   std::vector<std::vector<double> > s;
-  //   net.genSignalTemplate(s,2,tau_int_on_tau);
-  //
-  //   std::vector<int> indep_pairs;
-  //   net.formIndependentSubnet(indep_pairs,26829,s[0].size(),0);
-  //
-  //   std::cout<<"Idep pairs: "<<indep_pairs.size()<<"\n";
-  //
-  //   auto dHs_sHs = net.calculate_dHs_sHs(indep_pairs,s,26829);
-  //   std::cout<<dHs_sHs[0]/dHs_sHs[1]<<"\n";
-  //
-  // }
-
-}
+  return 0;
+}//End main()
