@@ -26,7 +26,7 @@ only K changes. So only need to call this function for _one_ clock!
 }
 
 //***************************************************************************
-double s_topHat(double tau0, double tau_int,
+double s_topHat(double , double tau_int,
   double t0, double tj, double Kab)
 {
   if(Kab==0) return 0;

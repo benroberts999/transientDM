@@ -71,7 +71,7 @@ namespace ClockInfo{
 
   inline int GET_CLOCK_INDEX(std::string in_clock){
     for(size_t i=0; i<CLOCKS.size(); i++)
-      if(in_clock==CLOCKS[i]) return i;
+      if(in_clock==CLOCKS[i]) return (int)i;
     std::cout<<"\nFAILURE 71 in clockInfo: cant find "<<in_clock<<"\n\n";
     return -1; //bad error
   }

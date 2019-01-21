@@ -6,6 +6,7 @@
 #include <cmath>
 #include "DataIO.h"
 #include "ChronoTimer.h"
+#include <array>
 
 
 //******************************************************************************
@@ -64,7 +65,6 @@ But, it _is_ guarenteed to be exactly N elements long
 }
 
 
-
 //******************************************************************************
 int main(){
   ChronoTimer timer;
@@ -79,16 +79,15 @@ int main(){
   int iday = 0; //in days
   int fday = 50;
   int teff_min = 60; //must be greater than (or =) tau_avg! XXX
-  int teff_max = 5000;
+  int teff_max = 10000;
   int nteff = 32;
   int nJeffW = 1; //window multiplier
-
-
+  bool force_PTB_SrYb=false;
+  bool force_SyrHbNplYb=false;
 
   timer.start();
   ClockNetwork net(filenames,tau_avg,max_bad_avg);
-  timer.start();
-  std::cout<<"Timer: "<<timer.lap_reading_str()<<"\n\n";
+  std::cout<<"Time to read files: "<<timer.lap_reading_str()<<"\n\n";
 
   int N_tot_pairs = net.get_NtotPairs();
   if(N_tot_pairs < min_N_pairs){
@@ -107,7 +106,6 @@ int main(){
   std::cout<<"= "<<j_init*tau_avg<<" -> "<<j_fin*tau_avg<<" s\n";
   std::cout<<"= "<<j_init<<" -> "<<j_fin<<" epochs (w/ tau_0=tau_avg = "
     <<tau_avg<<")\n\n";
-  // return 1;
 
 
   //Define the tau_int = tau_eff grint to search:
@@ -120,6 +118,11 @@ int main(){
   std::vector<int> jeff_grid;
   defineIntegerLogGrid(jeff_grid, jeff_min, jeff_max, nteff);
 
+  std::vector<double> da_max(nteff);
+  std::vector<double> Del_da(nteff);
+  std::vector<double> R_max(nteff);
+  std::vector<double> T_obs(nteff);
+
   // #pragma omp parallel for
   for(size_t it=0; it<jeff_grid.size(); it++){
     int j_eff = jeff_grid[it];
@@ -128,24 +131,23 @@ int main(){
     s.reserve(N_tot_pairs);
 
     // Jw = nJeffW*j_eff, or nJeffW*j_eff+1  (Jw must be odd)
-
     net.genSignalTemplate(s,nJeffW,j_eff, TDProfile::Gaussian);
-    int Jw = s[0].size();
+    int Jw = (int)s[0].size();
 
     int j_step = 1;
     //OR j_eff, or j_eff/2 (minimum of 1, must be int!)
-    j_step = j_eff/2;  //XXX make an input option!! XXX
-    if(j_step==0) j_step = 1;
+    //j_step = j_eff;  //XXX make an input option!! XXX
+    //if(j_step==0) j_step = 1;
 
     int num_j_used = 0;
-    double max_da = 0;
-    double Del_da = 0;
     for(long jbeg = j_init; jbeg<=j_fin; jbeg+=j_step){
 
-      int max_bad = 0;
+      int max_bad_inJw = 0;
 
       std::vector<int> indep_pairs;
-      net.formIndependentSubnet(indep_pairs,jbeg,Jw,max_bad);
+      net.formIndependentSubnet(indep_pairs,jbeg,Jw,max_bad_inJw,
+        force_PTB_SrYb,force_SyrHbNplYb);
+      //XXX Update this to a "must include" list ?
 
       int N_pairs = (int)indep_pairs.size();
       if(N_pairs<min_N_pairs) continue;
@@ -153,23 +155,24 @@ int main(){
       ++num_j_used;
 
       auto xHs = net.calculate_dHs_sHs(indep_pairs,s,jbeg);
-      // std::cout<<it<<" "<<jbeg<<" "<<N_pairs<<"\n";
-      // std::cout<<" --> "<<xHs.dHs/xHs.sHs<<"\n";
 
       double da_bf = fabs(xHs.dHs/xHs.sHs);
 
-      if(da_bf>max_da){
-        max_da = da_bf;
-        Del_da = 1./sqrt(xHs.sHs);
+      if(da_bf>da_max[it]){
+        da_max[it] = da_bf;
+        Del_da[it] = 1./sqrt(xHs.sHs);
       }
 
     }
 
-    std::cout<<j_eff*tau_avg<<" "<<(max_da + Del_da)
-     <<"   (Tobs = "<<num_j_used*j_step*tau_avg/(60*60.)<<" hr)"<<"\n";
+    double Tobs_hr = num_j_used*j_step*tau_avg/(60*60.);
+    T_obs[it] = Tobs_hr;
+
+    std::cout<<j_eff*tau_avg<<" "<<(da_max[it] + Del_da[it])
+      <<"   (Tobs = "<<T_obs[it]<<" hr)"<<"\n";
 
   }
 
-
+  std::cout<<"\nTotal time: "<<timer.reading_str()<<"\n";
   return 0;
 }//End main()

@@ -125,14 +125,16 @@ ClockNetwork::ClockNetwork(const std::vector<std::string> &filenames,
 
 //******************************************************************************
 std::string ClockNetwork::name(int i)const{
-  if(i>=0 && i<_clock_name_A.size())
-  return _clock_name_A[i]+"-"+_clock_name_B[i];
+  if(i>=0 && i<(int)_clock_name_A.size())
+    return _clock_name_A[i]+"-"+_clock_name_B[i];
+  else return "";
 }
 
 
 //******************************************************************************
 void ClockNetwork::formIndependentSubnet(std::vector<int> &indep_pairs,
-  long beg_epoch, int Jw, int max_bad) const
+  long beg_epoch, int Jw, int max_bad,
+  bool force_PTB_SrYb, bool force_SyrHbNplYb) const
 /*
 XXX Add ability to force to use PTB-Sr-Yb
 */
@@ -176,14 +178,18 @@ XXX Add ability to force to use PTB-Sr-Yb
     indep_pairs.push_back(i);
   }
 
-  bool force_PTB_SrYb = true; //XXX XXX XXX
+  // bool force_PTB_SrYb = true;
   if(force_PTB_SrYb){
     bool found = false;
-    // for(auto clk : clock_list){
-    //   if (clk == "PTBSr-PTBYb") found = true;
-    // }
     for(auto i : indep_pairs){
       if(name(i) == "PTBSr-PTBYb") found = true;
+    }
+    if(!found) indep_pairs.clear();
+  }
+  if(force_SyrHbNplYb){
+    bool found = false;
+    for(auto i : indep_pairs){
+      if(name(i) == "SYRTEHg-NPLYb") found = true;
     }
     if(!found) indep_pairs.clear();
   }
@@ -299,7 +305,7 @@ int ClockNetwork::readInDataFile(const std::string &in_fname, int max_bad)
   //_initial_time.push_back(i_time);
   //_total_time.push_back(tot_time);
 
-  int mod_avg = i_time%tau_avg;
+  int mod_avg = (int) (i_time%((long)tau_avg));
   int ibeg = mod_avg==0 ? 0 : tau_avg - mod_avg;
 
   long new_initial_time = i_time + ibeg;
@@ -317,9 +323,9 @@ int ClockNetwork::readInDataFile(const std::string &in_fname, int max_bad)
   ok_tmp.reserve(tot_time);
   {
     size_t j=0;
-    for(int i=0; i<tot_time; i++){
-      int tf = (int)round(times[j]);
-      int t  = i_time + i;
+    for(long i=0; i<tot_time; i++){
+      long tf = (long)round(times[j]);
+      long t  = i_time + i;
       if(tf==t){
         w_tmp.push_back(tmp_dw[j]);
         ok_tmp.push_back(true);
@@ -342,12 +348,12 @@ int ClockNetwork::readInDataFile(const std::string &in_fname, int max_bad)
 
   double oa_sum=0;
   long oa_good=0;
-  for(int i=ibeg; i<tot_time-tau_avg; i+=tau_avg){
+  for(long i=ibeg; i<tot_time-tau_avg; i+=tau_avg){
     int bad = 0;
     int good = 0;
     double w_sum = 0;
     bool new_ok = true;
-    for(int j=0; j<tau_avg; j++){
+    for(long j=0; j<tau_avg; j++){
       if(!ok_tmp[i+j]){
         ++bad;
         if(bad > max_bad){
@@ -370,7 +376,7 @@ int ClockNetwork::readInDataFile(const std::string &in_fname, int max_bad)
   }
 
   //store the mean:
-  _mean.emplace_back(oa_sum/oa_good);
+  _mean.emplace_back(oa_sum/double(oa_good));
 
   fetchClockInfo(in_fname);
 
@@ -385,10 +391,10 @@ void ClockNetwork::fetchClockInfo(const std::string &fn)
   std::string joiner="-";
   std::string suffix=".dat";
 
-  int i = fn.find(prefix) + prefix.length();
-  int j = fn.find(joiner,i);
-  int jl= joiner.length();
-  int k = fn.find(suffix,j);
+  int i = (int) (fn.find(prefix) + prefix.length());
+  int j = (int) fn.find(joiner,i);
+  int jl= (int) joiner.length();
+  int k = (int) fn.find(suffix,j);
 
   std::string clka = fn.substr(i,j-i);
   std::string clkb = fn.substr(j+jl,k-j-jl);
@@ -435,7 +441,7 @@ void ClockNetwork::calculateSigma0()
       var += pow(_delta_omega[i][j]-x0,2);
       ++ Npts;
     }
-    _sigma0.push_back(sqrt(var/Npts));
+    _sigma0.push_back(sqrt(var/double(Npts)));
   }
 }
 
@@ -449,14 +455,14 @@ bool sortcol( const std::vector<double>& v1,
 //******************************************************************************
 void ClockNetwork::rankClockPairs()
 {
-  bool print = true; //Just for testing!
+  //bool print = true; //Just for testing!
 
   /*
     * Sorts clocks by
   */
   if(_sigma0.size()==0) std::cerr<<"FAIL CN 268 - no sigma?\n";
 
-  int N_tot_pairs = _sigma0.size();
+  int N_tot_pairs = (int) _sigma0.size();
 
   std::vector< std::vector<double> > m;
   for(int i=0; i<N_tot_pairs; i++){

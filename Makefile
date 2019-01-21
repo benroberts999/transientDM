@@ -6,10 +6,10 @@ XD =.
 
 OMP=-fopenmp
 OPT=-Ofast
-WARN=-Wall -Wextra -Wpedantic -Wconversion
+WARN=-Wall -Wextra -Wpedantic -Wconversion #-Wfloatpromotion
 
 CXX=g++
-CXXFLAGS=-I$(ID) -std=c++11 $(WARNINGS) $(OMP) $(OPTIMIZE)
+CXXFLAGS=-I$(ID) -std=c++11 $(WARN) $(OMP) $(OPTIMIZE)
 
 detected_OS := $(shell uname -s) #will return the Operating system name
 $(info )
