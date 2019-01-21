@@ -9,8 +9,13 @@
 
 
 void defineIntegerLogGrid(std::vector<int> &grid, int min, int max, int N);
-
-
+void defineDoubleLogGrid(std::vector<double> &grid, double min, double max,
+  int N);
+void dmSearch_tau_int(
+  const ClockNetwork &net,
+  int teff_min, int teff_max, int nteff,
+  TDProfile profile, int nJeffW, double n_sig, double iday, double fday,
+  int min_N_pairs, bool force_PTB_SrYb, bool force_SyrHbNplYb);
 
 
 
@@ -18,7 +23,7 @@ void defineIntegerLogGrid(std::vector<int> &grid, int min, int max, int N);
 void dmSearch_tau_int(
   const ClockNetwork &net,
   int teff_min, int teff_max, int nteff,
-  TDProfile profile, int nJeffW, double iday, double fday,
+  TDProfile profile, int nJeffW, double n_sig, double iday, double fday,
   int min_N_pairs, bool force_PTB_SrYb, bool force_SyrHbNplYb)
 /*
 
@@ -31,7 +36,7 @@ void dmSearch_tau_int(
   //initial/final epochs to search. (Epochs are time/tau_0.)
   //Convert days -> seconds -> epochs
   long j_init = (long) (iday*24*60*60 / tau_avg); //in epochs!
-  long j_fin = (long) ((fday*24*60*60 + 1) / tau_avg);
+  long j_fin = (long) ((fday*24*60*60) / tau_avg) + 1;
 
   //Convert tau_eff (=tau_int) to j_eff (epoch)
   int jeff_min = teff_min/tau_avg;
@@ -98,6 +103,54 @@ void dmSearch_tau_int(
       <<"   (Tobs = "<<T_obs[it]<<" hr)"<<"\n";
   }
 
+  //Poisson factor
+  double pois_fac = -1./log(1.-erf(0.7*n_sig));
+  std::cout<<"poisFac="<<pois_fac<<"\n";
+
+  //XXX hard-coded output grids! XXX
+  std::vector<double> T_grid;
+  std::vector<double> tint_grid;
+  defineDoubleLogGrid(T_grid,0.5,50.,128);
+  defineDoubleLogGrid(tint_grid,1.,1.e5,2048);
+
+  std::vector<std::vector<double> > dX(128, std::vector<double>(2048));
+
+  //Sort the limits from the tau_eff grid into the tau_int grid
+  //Taking observation time
+  for(size_t iT=0; iT<T_grid.size(); iT++){
+    double T = T_grid[iT];
+    for(size_t iteff=0; iteff<jeff_grid.size(); iteff++){
+      double t_eff = jeff_grid[iteff]*tau_avg;
+      double Tobs = T_obs[iteff];
+      if(T > Tobs*pois_fac) continue; //could probs beak, but meh
+      double da = da_max[iteff] + n_sig*Del_da[iteff];
+      for(size_t itint=0; itint<tint_grid.size(); itint++){
+        double t_int = tint_grid[itint];
+        if(t_int<t_eff) continue;
+        double dX_prev = dX[iT][itint];
+        if(da<dX_prev || dX_prev==0) dX[iT][itint] = da;
+      }
+    }
+  }
+
+  std::string of2name = "dAlpha_out2.txt";
+  std::ofstream of2(of2name);
+  //if(ntau>1) of2.open(of2name);
+  of2<<"tau_int\\T ";
+  of2.precision(3);
+  for(auto i_T=0ul; i_T<T_grid.size(); i_T++){
+    of2<<T_grid[i_T]<<" ";
+  }
+  of2<<"\n";
+  of2.precision(3);
+  for(auto i_tint=0u; i_tint<tint_grid.size(); i_tint++){
+    double tau_int = tint_grid[i_tint];
+    of2<<tau_int<<" ";
+    for(auto i_T=0u; i_T<T_grid.size(); i_T++){
+      of2<<dX[i_T][i_tint]<<" ";
+    }
+    of2<<"\n";
+  }
 
 }
 
@@ -180,7 +233,7 @@ int main(){
 
   //***** Probably from here: into functions:
   timer.start();
-  dmSearch_tau_int(net, teff_min,teff_max,nteff, profile,nJeffW,
+  dmSearch_tau_int(net, teff_min,teff_max,nteff, profile,nJeffW,n_sig,
     iday,fday, min_N_pairs,force_PTB_SrYb,force_SyrHbNplYb);
   std::cout<<"Time to analyse data: "<<timer.lap_reading_str()<<"\n";
 
@@ -222,4 +275,20 @@ But, it _is_ guarenteed to be exactly N elements long
     grid[i] = z;
   }
 
+}
+
+//******************************************************************************
+void defineDoubleLogGrid(std::vector<double> &grid, double min, double max,
+  int N)
+/*
+Forms a logarithmically-spaced grid of doubles, between [min,max] in N steps.
+*/
+{
+  grid.clear();
+  grid.reserve(N);
+  grid.push_back(min);
+  for(int i=1; i<N; i++){
+    double x = double(i)/(N-1);
+    grid.emplace_back(min*pow(max/min,x));
+  }
 }
