@@ -1,3 +1,4 @@
+
 namespace DMsignalTemplate{
 
 double s_Gaussian(double tau0, double tau_int,

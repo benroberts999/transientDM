@@ -74,34 +74,40 @@
 // }
 
 
+
+//******************************************************************************
+int ClockNetwork::get_NtotPairs() const
+{
+  return (int) _mean.size();
+}
+
 //******************************************************************************
 ClockNetwork::ClockNetwork(const std::vector<std::string> &filenames,
-  int tau_avg)
+  int tau_avg, int max_bad)
   : _tau_0(tau_avg)
 {
-  std::cout<<"reading in: \n";
-  for(auto fn : filenames){
-    std::cout<<fn<<"\n";
-    readInDataFile(fn,0);
+
+  for(size_t i=0; i<filenames.size(); i++){
+    std::cout<<"Reading input data file: "<<i+1<<"/"<<filenames.size()
+    // <<" ("<<filenames[i]<<")"
+    <<"         \r"<<std::flush;
+    readInDataFile(filenames[i],max_bad);
   }
+  std::cout<<"\n\n";
+
+
   calculateSigma0();
   rankClockPairs();
 
-  for(int i=0; i<(int)_sigma0.size(); i++){
-    std::cout<<name(i)<<": dK="<<_K_AB[i]<<", x0="<<_mean[i]
-    <<", s0="<<_sigma0[i]<<"\n";
-  }
-
-  std::cout<<"\n\n";
-
+  std::cout<<"Network summary:\n";
   for(auto i : _ranked_index_list){
-    std::cout<<name(i)<<": dK="<<_K_AB[i]<<", x0="<<_mean[i]
-    <<", s0="<<_sigma0[i]<<"\n";
+    printf("%17s: dK=%5.2f, x0=%8.1e, sig=%8.1e\n",name(i).c_str(),_K_AB[i],
+      _mean[i],_sigma0[i]);
   }
+  std::cout<<"\n";
 
-  std::cout<<"\n\n";
-
-  int expected_num_clocks = 20;
+  //Reserve space in vectors (this doesn't help too much)
+  int expected_num_clocks = (int) filenames.size();
   _delta_omega.reserve(expected_num_clocks);
   _data_ok.reserve(expected_num_clocks);
   _initial_time.reserve(expected_num_clocks);
@@ -170,12 +176,24 @@ XXX Add ability to force to use PTB-Sr-Yb
     indep_pairs.push_back(i);
   }
 
+  bool force_PTB_SrYb = true; //XXX XXX XXX
+  if(force_PTB_SrYb){
+    bool found = false;
+    // for(auto clk : clock_list){
+    //   if (clk == "PTBSr-PTBYb") found = true;
+    // }
+    for(auto i : indep_pairs){
+      if(name(i) == "PTBSr-PTBYb") found = true;
+    }
+    if(!found) indep_pairs.clear();
+  }
+
 }
 
 
 
 //******************************************************************************
-std::vector<double> ClockNetwork::calculate_dHs_sHs(
+Result_xHs ClockNetwork::calculate_dHs_sHs(
   const std::vector<int> &indep_pairs,
   const std::vector<std::vector<double> > &s, long beg_epoch) const
 /*
@@ -200,19 +218,21 @@ beg_epoch is the begining epoch for the window
     sHs += Hii*ss_i;
     dHs += Hii*ds_i;
   }
-  return {dHs,sHs};
+  return Result_xHs(dHs,sHs);
 }
 
 
 //******************************************************************************
 void ClockNetwork::genSignalTemplate(std::vector<std::vector<double> > &s,
-  int n_window, int tint_on_tau0) const
+  int n_window, int j_int, TDProfile profile) const
+/*
+j_int := tau_int / tau_0
+*/
 {
-  int Jw = n_window * tint_on_tau0;
+  int Jw = n_window * j_int;
   if(Jw%2 == 0) ++Jw; // Jw must be odd
 
-  int tint = tint_on_tau0 * _tau_0;
-  //XXX also have integer tint_on_tau0 ?
+  int tint = j_int * _tau_0;
 
   s.resize(_K_AB.size(), std::vector<double>(Jw));
   //XXX note: when creating s, _reserve_ enough space for largest JW!!
@@ -220,32 +240,34 @@ void ClockNetwork::genSignalTemplate(std::vector<std::vector<double> > &s,
   double j0 = 0.5*Jw - 1.;
   double t0 = j0*_tau_0;
 
+  //Define a function pointer, to switch between
+  double (*dmSignal)(double, double, double, double, double);
+  switch(profile){
+    case TDProfile::Gaussian : dmSignal = &DMsignalTemplate::s_Gaussian;
+      break;
+    case TDProfile::Flat : dmSignal = &DMsignalTemplate::s_topHat;
+  }
+
+
   std::vector<double> sonK;
   sonK.reserve(Jw);
   for(int j=0; j<Jw; j++){
     double tj = _tau_0*j;
-    sonK.push_back(DMsignalTemplate::s_Gaussian(_tau_0,tint,t0,tj));
-    // sonK[i] = DMsignalTemplate::s_topHat(Kab,_tau_0,tint,t0,tj);
+    sonK.emplace_back(dmSignal(_tau_0,tint,t0,tj,1));
   }
-
-  //std::cout<<"t0="<<t0<<", Jw="<<Jw<<", Tw="<<Jw*_tau_0<<"\n";
 
   for(size_t i=0; i<_K_AB.size(); i++){//loop through clocks
     double Kabi = _K_AB[i];
-    for(int j = 0; j < Jw; j++){
-      // double tj = _tau_0*j;
-      //s[i][j] = DMsignalTemplate::s_Gaussian(_tau_0,tint,t0,tj,Kab);
-      s[i][j] = Kabi*sonK[j];
-    }
+    for(int j = 0; j<Jw; j++) s[i][j] = Kabi*sonK[j];
   }
+
 }
 
 
 
 
 //******************************************************************************
-int ClockNetwork::readInDataFile(const std::string &in_fname,
-  int max_bad)
+int ClockNetwork::readInDataFile(const std::string &in_fname, int max_bad)
 //XXX Update for other formats!
 {
 
@@ -255,7 +277,6 @@ int ClockNetwork::readInDataFile(const std::string &in_fname,
   if(ok!=0) return ok;
 
   int tau_avg = _tau_0;
-  //_tau_0 = tau_avg; //XXX put this outside? XXX
 
   //initial_time = (times.front() - MJD_DAY_ZERO) * SECS_IN_DAY;
 
@@ -319,10 +340,8 @@ int ClockNetwork::readInDataFile(const std::string &in_fname,
   w_ref.reserve(tot_time/tau_avg);
   ok_ref.reserve(tot_time/tau_avg);
 
-  //int max_bad = 0;
   double oa_sum=0;
   long oa_good=0;
-  //long oa_bad=0;
   for(int i=ibeg; i<tot_time-tau_avg; i+=tau_avg){
     int bad = 0;
     int good = 0;
@@ -348,19 +367,10 @@ int ClockNetwork::readInDataFile(const std::string &in_fname,
       oa_sum += new_w;
       ++oa_good;
     }
-    // else{
-    //   ++oa_bad;
-    // }
   }
 
-  double mean = oa_sum/oa_good;
-  //std::cout<<mean<<"\n";
-
-  _mean.push_back(mean);
-
-  // std::cout<<"\nhere:\n";
-  // std::cout<<oa_good<<" "<<oa_bad<<" = "<<oa_good+oa_bad<<" "<<w_ref.size()
-  //   <<" "<<ok_ref.size()<<" |"<<w_ref.size()*tau_avg<<" =? "<<w_tmp.size()<<"\n";
+  //store the mean:
+  _mean.emplace_back(oa_sum/oa_good);
 
   fetchClockInfo(in_fname);
 
@@ -396,6 +406,7 @@ void ClockNetwork::fetchClockInfo(const std::string &fn)
   _K_B.push_back(Kb);
   _K_AB.push_back(Ka-Kb);
 
+  // // Positions: Not used (for now)
   // rA.resize(3);
   // rB.resize(3);
   // double tL = 0;
@@ -406,9 +417,6 @@ void ClockNetwork::fetchClockInfo(const std::string &fn)
   //   rB[ix] = CLK::LABPOS[ib][ix] - CLK::SYRTE_POS[ix];
   // }
   // L = sqrt(tL);
-
-  // tau0 = CLK::tau0;
-  // tau  = tau0;
 
 }
 

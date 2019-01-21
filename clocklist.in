@@ -1,7 +1,7 @@
 # '!' or '#' denotes comment - code will skip that line.
 # First line is absolute directory. Then file names.
-!/obs/broberts/data_syrte/data/
-./data/
+/obs/broberts/data_syrte/data/
+!./data/
 cppdiff_NPLSr-NPLYb.dat
 !cppdiff_PTBSr-NPLSr.dat
 cppdiff_PTBSr-NPLYb.dat

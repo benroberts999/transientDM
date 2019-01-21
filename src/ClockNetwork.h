@@ -12,11 +12,25 @@ const int SECS_IN_DAY = 24*60*60;
 
 enum class ClockAtom{Sr, Hg, YbII};
 
+enum class TDProfile{Gaussian, Flat};
+
+
+struct Result_xHs{
+
+  Result_xHs(double dHs, double sHs)
+    :dHs(dHs), sHs(sHs){};
+
+  double dHs;
+  double sHs;
+
+};
+
 class ClockNetwork{
 
   public:
 
-    ClockNetwork(const std::vector<std::string> &filenames, int tau_avg); //
+    ClockNetwork(const std::vector<std::string> &filenames, int tau_avg,
+      int max_bad=0); //
 
     // double getK_AB();
 
@@ -71,12 +85,14 @@ class ClockNetwork{
     void calculateSigma0();
     void rankClockPairs();
 
+    int get_NtotPairs() const;
+
     std::string name(int i) const;
 
     void genSignalTemplate(std::vector<std::vector<double> > &s,
-      int n_window, int tint_on_tau0) const;
+      int n_window, int j_int, TDProfile profile) const;
 
-    std::vector<double> calculate_dHs_sHs(
+    Result_xHs calculate_dHs_sHs(
       const std::vector<int> &indep_pairs,
       const std::vector<std::vector<double> > &s, long beg_epoch) const;
 

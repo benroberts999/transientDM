@@ -5,11 +5,19 @@
 #include <fstream>
 #include <cmath>
 #include "DataIO.h"
+#include "ChronoTimer.h"
 
 
-
+//******************************************************************************
 void getFileNames(std::vector<std::string> &fnames,
   const std::string &input_fn)
+/*
+Opens an input text files (called: input_fn)
+Reads each line into an array.
+First line of text-file is an absolute (or relative) path name.
+Each subsequent line contains just the file names.
+Any line that begines with '!' or '#' is ignored
+*/
 {
   std::ifstream ifs;
   ifs.open(input_fn);
@@ -28,68 +36,136 @@ void getFileNames(std::vector<std::string> &fnames,
   ifs.close();
 }
 
+//******************************************************************************
+void defineIntegerLogGrid(std::vector<int> &grid, int min, int max, int N)
+/*
+Forms a logarithmically-spaced grid of integers, between [min,max] in N steps.
+Note: Because each point is an integer, if the step-size is too small,
+you run the risk of getting 'doubles' of some grid points (same point more than
+once).
+I fix this, by just incrementing by 1 in these cases.
+Technically, this means it's possible for the actual last grid point to go
+beyond the given 'max' (if N > (max-min)), and the grid will then just be linear
+But, it _is_ guarenteed to be exactly N elements long
+*/
+{
+  grid.resize(N);
+  grid[0] = min;
 
+  for(int i=1; i<N; i++){
+    double x = double(i)/(N-1);
+    double y = min*pow(double(max)/min,x);
+    int z = (int) round(y);
+    //this is to stop "doubling up" from occuring:
+    if(i>0 && z<=grid[i-1]) z = grid[i-1]+1;
+    grid[i] = z;
+  }
+
+}
+
+
+
+//******************************************************************************
 int main(){
 
   std::vector<std::string> filenames;
   getFileNames(filenames,"./clocklist.in");
 
   int tau_avg = 60;
-  ClockNetwork net(filenames,tau_avg);
-
-  long j_init = net._initial_epoch[3];
-  long j_fin = j_init+6000;
-
-  //make a net.printInfo() command!
-
-  //return 1;
+  int min_N_pairs = 2; //XXX input! Must be greater than 0
+  int max_bad_avg = 0;
+  int iday = 0; //in days
+  int fday = 50;
   int teff_min = 60; //must be greater than (or =) tau_avg! XXX
-  int teff_max = 3000;
-  int nteff = 9;
-  //Define the tau_eff grid (exponentially spaced grid):
-  int teff_ot0_min = teff_min/tau_avg;
-  int teff_ot0_max = teff_max/tau_avg;
-  if(nteff==1) teff_ot0_max = teff_ot0_min;
-  std::vector<int> teff_ot0_list(nteff);
-  teff_ot0_list[0] = teff_ot0_min;
-  for(int i=1; i<nteff; i++){
-    double x = double(i)/(nteff-1);
-    double teff_tmp = teff_ot0_min*pow(double(teff_ot0_max)/teff_ot0_min,x);
-    int iteff_tmp = (int)round(teff_tmp);
-    //this is to stop "doubles" from occuring (teff is an integer):
-    if(i>0 && iteff_tmp<=teff_ot0_list[i-1]) iteff_tmp = teff_ot0_list[i-1]+1;
-    teff_ot0_list[i] = iteff_tmp;
+  int teff_max = 5000;
+  int nteff = 32;
+  int nJeffW = 1; //window multiplier
+
+
+
+  ChronoTimer timer;
+  timer.start();
+  ClockNetwork net(filenames,tau_avg,max_bad_avg);
+  std::cout<<"Timer: "<<timer.lap_reading_str()<<"\n\n";
+
+  int N_tot_pairs = net.get_NtotPairs();
+  if(N_tot_pairs < min_N_pairs){
+    std::cerr<<"No clocks? Check data file paths\n";
+    return 1;
   }
 
-  //for(int i=1; i<15; i++){
-  for(size_t it=0; it<teff_ot0_list.size(); it++){
-    int tau_int_on_tau = teff_ot0_list[it];
-    std::cout<<"tau_eff="<<tau_int_on_tau*tau_avg<<"\n";
+  //initial/final EPOCHS to search.
+  //Epochs are time/tau_0.
+  //Initial/final: convert days -> seconds
+  long j_init = (long) (iday*24*60*60 / tau_avg); //in epochs!
+  long j_fin = (long) ((fday*24*60*60 + 1) / tau_avg);
+  //
+  std::cout<<"Running for days (since MJD:"<<MJD_DAY_ZERO<<"): "
+    <<j_init*tau_avg/(24*60*60)<<" -> "<<j_fin*tau_avg/(24*60*60)<<"\n";
+  std::cout<<"= "<<j_init*tau_avg<<" -> "<<j_fin*tau_avg<<" s\n";
+  std::cout<<"= "<<j_init<<" -> "<<j_fin<<" epochs (w/ tau_0=tau_avg = "
+    <<tau_avg<<")\n\n";
+  // return 1;
+
+
+  //Define the tau_int = tau_eff grint to search:
+  //XXX Define prperly (equation) link between tau_int and tau_eff !!!
+  //note: j_eff := tau_eff / tau_0 = tau_eff / tau_avg
+  int jeff_min = teff_min/tau_avg;
+  int jeff_max = teff_max/tau_avg;
+
+  //Define the tau_eff grid (exponentially spaced grid):
+  std::vector<int> jeff_grid;
+  defineIntegerLogGrid(jeff_grid, jeff_min, jeff_max, nteff);
+
+  // #pragma omp parallel for
+  for(size_t it=0; it<jeff_grid.size(); it++){
+    int j_eff = jeff_grid[it];
 
     std::vector<std::vector<double> > s;
-    int window_tauint_mult = 1;
-    net.genSignalTemplate(s,window_tauint_mult,tau_int_on_tau);
+    s.reserve(N_tot_pairs);
 
-    int j_step = tau_avg; //XXX How to determine Tobs?
-    int num_j0 = 0;
+    // Jw = nJeffW*j_eff, or nJeffW*j_eff+1  (Jw must be odd)
+    //XXX make above an input option!! XXX
+    net.genSignalTemplate(s,nJeffW,j_eff, TDProfile::Gaussian);
+    int Jw = s[0].size();
+
+    double max_da = 0;
+    double Del_da = 0;
+
+    int j_step = 1;//tau_avg; XXX
+    //OR j_eff, or j_eff/2 (minimum of 1, must be int!)
+    j_step = j_eff/2;
+    if(j_step==0) j_step = 1;
+
+    int num_j_used = 0;
     for(long jbeg = j_init; jbeg<=j_fin; jbeg+=j_step){
-      // std::cerr<<jbeg<<"\n";
 
-      int Jw = s[0].size();
       int max_bad = 0;
 
       std::vector<int> indep_pairs;
       net.formIndependentSubnet(indep_pairs,jbeg,Jw,max_bad);
 
       int N_pairs = (int)indep_pairs.size();
-      //std::cout<<"Idep pairs: "<<N_pairs<<"\n";
-      if(N_pairs<1) continue;
+      if(N_pairs<min_N_pairs) continue;
 
-      ++num_j0;
+      ++num_j_used;
 
-      auto dHs_sHs = net.calculate_dHs_sHs(indep_pairs,s,jbeg);
-      std::cout<<dHs_sHs[0]/dHs_sHs[1]<<"\n";
+      auto xHs = net.calculate_dHs_sHs(indep_pairs,s,jbeg);
+      // std::cout<<it<<" "<<jbeg<<" "<<N_pairs<<"\n";
+      // std::cout<<" --> "<<xHs.dHs/xHs.sHs<<"\n";
+
+      double da_bf = fabs(xHs.dHs/xHs.sHs);
+
+      if(da_bf>max_da){
+        max_da = da_bf;
+        Del_da = 1./sqrt(xHs.sHs);
+      }
+
     }
+
+    std::cout<<j_eff*tau_avg<<" "<<(max_da + Del_da)
+     <<"   (Tobs = "<<num_j_used*j_step*tau_avg/(60*60.)<<" hr)"<<"\n";
 
   }
 

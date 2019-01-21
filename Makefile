@@ -51,14 +51,15 @@ $(OD)/%.o: $(ID)/%.cpp $(ID)/%.h $(COMH)
 # 	$(COMP)
 
 # Here: List rules for any other progs that don't fit above rules?
-$(OD)/main.o: $(ID)/main.cpp $(COMH) $(ID)/ClockNetwork.h $(ID)/DataIO.h
+$(OD)/main.o: $(ID)/main.cpp $(COMH) $(ID)/ClockNetwork.h $(ID)/DataIO.h \
+$(ID)/ChronoTimer.h
 	$(COMP)
 
 ################################################################################
 # Link + build all final programs
 
 $(XD)/main: $(OD)/main.o $(OD)/ClockNetwork.o $(OD)/DataIO.o \
-$(OD)/DMs_signalTemplates.o
+$(OD)/DMs_signalTemplates.o $(OD)/ChronoTimer.o
 	$(LINK)
 
 ################################################################################
