@@ -16,7 +16,7 @@ $(info )
 $(info Detected operating system: $(detected_OS))
 $(info )
 
-LIBS=-lgsl -lgslcblas #-lm
+LIBS= #-lgsl -lgslcblas #-lm
 
 #Command to compile objects and link them
 COMP=$(CXX) -c -o $@ $< $(CXXFLAGS)
