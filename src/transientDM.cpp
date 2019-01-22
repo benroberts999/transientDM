@@ -97,6 +97,10 @@ int main(){
     std::cout<<"Assuming a flat profile.\n";
   std::cout<<"\n";
 
+  // std::cout<<"\nRandomising:\n"<<std::flush;
+  // net.replaceWithRandomNoise(FillGaps::yes);
+  // std::cout<<"Randomised.\n"<<std::flush;
+
   //***** Probably from here: into functions:
   timer.start();
   dmSearch_tau_int(net, teff_min,teff_max,nteff, profile,nJeffW,n_sig,

@@ -2,6 +2,7 @@
 #include "ClockInfo.h"
 #include "DataIO.h"
 #include "DMs_signalTemplates.h"
+#include "RNG_randomNumberGenerators.h"
 #include <vector>
 #include <string>
 #include <algorithm> //for sort
@@ -438,5 +439,42 @@ in the correct 'sorted' order, in the member variable list: _ranked_index_list
 
   for(int i=0; i<N_tot_pairs; i++)
     _ranked_index_list.push_back(int(m[i][1]));
+
+}
+
+
+//******************************************************************************
+void ClockNetwork::replaceWithRandomNoise(FillGaps fill_gapsQ)
+/*
+Replaces clock data with Random white (Gaussian) noise, with the same
+mean and standard deviation as the existing clock data.
+fill_gapsQ = FillGaps::yes, it will fill-in all the gaps.
+Otherwise, data gaps will be preserved (defult is no)
+*/
+{
+
+  bool fill_gaps = fill_gapsQ==FillGaps::yes? true : false;
+
+  if(fill_gaps){
+    #pragma omp parallel for
+    for(size_t i=0; i<_delta_omega.size(); i++){
+      double x0 = _mean[i];
+      double sig = _sigma0[i];
+      for(size_t j=0; j<_delta_omega[i].size(); j++){
+        _data_ok[i][j] = true;
+        _delta_omega[i][j] = RNG::randGausVal(sig, x0);
+      }
+    }
+  }else{
+    #pragma omp parallel for
+    for(size_t i=0; i<_delta_omega.size(); i++){
+      double x0 = _mean[i];
+      double sig = _sigma0[i];
+      for(size_t j=0; j<_delta_omega[i].size(); j++){
+        if(!_data_ok[i][j]) continue;
+        _delta_omega[i][j] = RNG::randGausVal(sig, x0);
+      }
+    }
+  }
 
 }

@@ -9,6 +9,7 @@ namespace CNconsts{
 
 enum class ClockAtom{Sr, Hg, YbII};
 enum class TDProfile{Gaussian, Flat};
+enum class FillGaps{yes, no};
 
 //******************************************************************************
 struct Result_xHs{
@@ -33,6 +34,8 @@ public:
   int get_NtotPairs() const;
   int get_tau0() const;
   std::string name(int i) const;
+
+  void replaceWithRandomNoise(FillGaps fill_gapsQ=FillGaps::no);
 
   //Used for the analysis:
   void genSignalTemplate(std::vector<std::vector<double> > &s,

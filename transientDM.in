@@ -2,8 +2,8 @@
 0. 50.           # init/fin day to search (since MJD:57900)
 60 0             # tau_avg, allowable skipped-points (in avg)
 60 10000 256     # tau_int: min, max, N_pts
-2 1 1            # Min clock pairs; Force: PTB:Yb/Sr? SYR:Hg/NPL:Yb? 1=y
+2 0 0            # Min clock pairs; Force: PTB:Yb/Sr? SYR:Hg/NPL:Yb? 1=y
 0                # Profile. 0=Gaussian. 1=flat
 1.               # n_sig [1=68%CL, 1.645=90%, 2=95.5%]
-190122b-211      # Label for output file (can be 'na' for none)
+test             # Label for output file (can be 'na' for none)
 ##################
