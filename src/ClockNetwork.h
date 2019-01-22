@@ -24,78 +24,55 @@ struct Result_xHs{
 //******************************************************************************
 class ClockNetwork{
 
-  public:
+public:
 
-    ClockNetwork(const std::vector<std::string> &filenames, int tau_avg,
-      int max_bad=0); //
+  ClockNetwork(const std::vector<std::string> &filenames, int tau_avg,
+    int max_bad=0);
 
-    // double getK_AB();
+  //getters:
+  int get_NtotPairs() const;
+  int get_tau0() const;
+  std::string name(int i) const;
 
-//  private:
+  //Used for the analysis:
+  void genSignalTemplate(std::vector<std::vector<double> > &s,
+    int n_window, int j_int, TDProfile profile) const;
 
-    const int _tau_0;
+  void formIndependentSubnet(std::vector<int> &indep_pairs,
+    long beg_epoch, int Jw, int max_bad,
+    bool force_PTB_SrYb=false, bool force_SyrHbNplYb=false) const;
 
-    // std::vector<std::vector<double> > raw_data;
-    std::vector<std::vector<double> > _delta_omega;
-    std::vector<std::vector<bool> > _data_ok;
-    std::vector<long> _initial_time;
-    std::vector<long> _initial_epoch;
-    std::vector<double> _mean;
-    std::vector<double> _sigma0;
-    // std::vector<long> _total_time;
-
-    std::vector<int> _ranked_index_list;
-
-
-    // int tau_avg;
-
-    // std::vector<std::vector<double> > _avgd_delta_omega;
-    // std::vector<std::vector<bool> > _avgd_data_ok;
-
-    std::vector<std::string> _clock_name_A;
-    std::vector<std::string> _clock_name_B;
-
-    std::vector<double> _K_A;
-    std::vector<double> _K_B;
-    std::vector<double> _K_AB;
-
-    //int tau0;
-
-    // std::vector<double> sigma_tau0;
-
-    //long unsigned int initial_epoch; //?
-    //int tau_0;
-
-    // std::vector<bool> pair_OK;
-
-    // std::vector<int> ranked_index_list;
+  Result_xHs calculate_dHs_sHs(
+    const std::vector<int> &indep_pairs,
+    const std::vector<std::vector<double> > &s, long beg_epoch) const;
 
 
+private: //data
 
-  //private:
+  const int _tau_0; //const means cannot be changed after initialised
 
-    //int readInDataFile_old(const std::string &in_fname);
-    int readInDataFile(const std::string &in_fname, int max_bad=0);
+  std::vector<std::vector<double> > _delta_omega;
+  std::vector<std::vector<bool> > _data_ok;
+  std::vector<long> _initial_time; //ever used?
+  std::vector<long> _initial_epoch;
+  std::vector<double> _mean;
+  std::vector<double> _sigma0;
 
-    void fetchClockInfo(const std::string &fn);
+  std::vector<int> _ranked_index_list;
 
-    void calculateSigma0();
-    void rankClockPairs();
+  std::vector<std::string> _clock_name_A;
+  std::vector<std::string> _clock_name_B;
 
-    int get_NtotPairs() const;
-    int get_tau0() const;
+  std::vector<double> _K_A;
+  std::vector<double> _K_B;
+  std::vector<double> _K_AB;
 
-    std::string name(int i) const;
 
-    void genSignalTemplate(std::vector<std::vector<double> > &s,
-      int n_window, int j_int, TDProfile profile) const;
+private: //methods
 
-    Result_xHs calculate_dHs_sHs(
-      const std::vector<int> &indep_pairs,
-      const std::vector<std::vector<double> > &s, long beg_epoch) const;
-
-    void formIndependentSubnet(std::vector<int> &indep_pairs,
-      long beg_epoch, int Jw, int max_bad,
-      bool force_PTB_SrYb=false, bool force_SyrHbNplYb=false) const;
+  int readInDataFile(const std::string &in_fname, int max_bad=0);
+  void fetchClockInfo(const std::string &fn);
+  void calculateSigma0();
+  void rankClockPairs();
 
 };

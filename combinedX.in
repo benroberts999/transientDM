@@ -1,0 +1,13 @@
+! comment lines begin with '!'
+! output label for file:
+190122b
+! T output list (for function of tau_int):
+! (nb: will add the largest tau too)
+0.9 1 10 12 40
+! tau_int output list (for function of T):
+30 33 60 100 1.e3 1.e4
+! list of files, followed by tau_int min/max [0 for all]
+dAlpha-190122b-200.txt 10 0
+dAlpha-190122b-210.txt 10 0
+dAlpha-190122b-201.txt 10 0
+dAlpha-190122b-211.txt 10 0

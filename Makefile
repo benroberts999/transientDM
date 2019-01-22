@@ -6,7 +6,7 @@ XD =.
 
 OMP=-fopenmp
 OPT=-Ofast
-WARN=-Wall -Wextra -Wpedantic -Wconversion #-Wfloatpromotion
+WARN=-Wall -Wextra -Wpedantic -Wconversion
 
 CXX=g++
 CXXFLAGS=-I$(ID) -std=c++11 $(WARN) $(OMP) $(OPTIMIZE)
@@ -26,7 +26,7 @@ LINK=$(CXX) -o $@ $^ $(CXXFLAGS) $(LIBS)
 
 #Allow exectuables to be placed in another directory:
 ALLEXES = $(addprefix $(XD)/, \
- main transientDM \
+ transientDM combinedX \
 )
 
 #default tagret
@@ -45,10 +45,10 @@ COMH = $(addprefix $(ID)/, \
 $(OD)/%.o: $(ID)/%.cpp $(ID)/%.h $(COMH)
 	$(COMP)
 
-# # Rule for files that _don't_ have a .h header. (mains)
-# # These also depend on the common headers
-# $(OD)/%.o: $(ID)/%.cpp $(COMH)
-# 	$(COMP)
+# Rule for files that _don't_ have a .h header. (mains)
+# These also depend on the common headers
+$(OD)/%.o: $(ID)/%.cpp $(COMH)
+	$(COMP)
 
 # Here: List rules for any other progs that don't fit above rules?
 $(OD)/main.o: $(ID)/main.cpp $(COMH) $(ID)/ClockNetwork.h $(ID)/DataIO.h \
@@ -63,12 +63,16 @@ $(ID)/DataIO.h $(ID)/ChronoTimer.h
 # Link + build all final programs
 
 $(XD)/transientDM: $(OD)/transientDM.o $(OD)/ClockNetwork.o $(OD)/DataIO.o \
-$(OD)/DMs_signalTemplates.o $(OD)/ChronoTimer.o
+$(OD)/DMs_signalTemplates.o $(OD)/ChronoTimer.o \
+$(OD)/RNG_randomNumberGenerators.o
 	$(LINK)
 
-$(XD)/main: $(OD)/main.o $(OD)/ClockNetwork.o $(OD)/DataIO.o \
-$(OD)/DMs_signalTemplates.o $(OD)/ChronoTimer.o
+$(XD)/combinedX: $(OD)/combinedX.o
 	$(LINK)
+
+# $(XD)/main: $(OD)/main.o $(OD)/ClockNetwork.o $(OD)/DataIO.o \
+# $(OD)/DMs_signalTemplates.o $(OD)/ChronoTimer.o
+# 	$(LINK)
 
 ################################################################################
 
