@@ -7,8 +7,7 @@
 #include <fstream>
 #include <cmath>
 
-// #include "RNG_randomNumberGenerators.h"
-// #include <array>
+enum class WhichOutput{ limit, R,  limit_and_R, Rthresh};
 
 void defineIntegerLogGrid(std::vector<int> &grid, int min, int max, int N);
 void defineDoubleLogGrid(std::vector<double> &grid, double min, double max,
@@ -18,7 +17,16 @@ void dmSearch_tau_int(
   const ClockNetwork &net, int teff_min, int teff_max, int nteff,
   TDProfile profile, int nJeffW, double n_sig, double iday, double fday,
   int min_N_pairs, bool force_PTB_SrYb, bool force_SyrHbNplYb,
-  std::string olabel);
+  std::string olabel, WhichOutput whichoutput);
+
+void outputConstraints( const std::vector<int> &jeff_grid, int tau_avg,
+  const std::vector<double> &da_max, const std::vector<double> &Del_da,
+  const std::vector<double> &T_obs, double n_sig, const std::string &olabel);
+
+void outputR_teff(const std::vector<int> &jeff_grid, int tau_avg,
+  const std::vector<double> &R_max,
+  const std::vector<double> &da_max, const std::vector<double> &Del_da,
+  const std::vector<double> &T_obs, const std::string &olabel);
 
 
 //******************************************************************************
@@ -35,6 +43,7 @@ int main(){
   TDProfile profile;  //TD profile (flat/gaussian)
   int n_sig; //[1=68%CL, 1.645=90%, 2=95.5%]
   std::string olabel;
+  WhichOutput whichoutput; //enum for what output/calculation to do
 
   int nJeffW = 1; //window multiplier (not read from file)
 
@@ -42,7 +51,7 @@ int main(){
   {
     std::ifstream ifs;
     std::string jnk;
-    int iPSY, iSHNY, iP;
+    int iPSY, iSHNY, iP, iwhat;
     ifs.open("transientDM.in");
     ifs >> clock_list_infn;                 getline(ifs,jnk);
     ifs >> iday >> fday;                    getline(ifs,jnk);
@@ -51,12 +60,18 @@ int main(){
     ifs >> min_N_pairs >> iPSY >> iSHNY;    getline(ifs,jnk);
     ifs >> iP;                              getline(ifs,jnk);
     ifs >> n_sig;                           getline(ifs,jnk);
+    ifs >> iwhat;                           getline(ifs,jnk);
     ifs >> olabel;                          getline(ifs,jnk);
     ifs.close();
     force_PTB_SrYb   = (iPSY ==1) ? true : false;
     force_SyrHbNplYb = (iSHNY==1) ? true : false;
     profile = (iP==1) ? TDProfile::Flat : TDProfile::Gaussian;
     olabel = (olabel=="na") ? "" : "-"+olabel;
+    if(iwhat==0) whichoutput = WhichOutput::limit;
+    else if(iwhat==1) whichoutput = WhichOutput::R;
+    else if(iwhat==2) whichoutput = WhichOutput::limit_and_R;
+    else if(iwhat==3) whichoutput = WhichOutput::Rthresh;
+    else whichoutput = WhichOutput::limit; //default..
   }
 
   //Some checks for valid input data:
@@ -101,10 +116,10 @@ int main(){
   // net.replaceWithRandomNoise(FillGaps::yes);
   // std::cout<<"Randomised.\n"<<std::flush;
 
-  //***** Probably from here: into functions:
   timer.start();
   dmSearch_tau_int(net, teff_min,teff_max,nteff, profile,nJeffW,n_sig,
-    iday,fday, min_N_pairs,force_PTB_SrYb,force_SyrHbNplYb,olabel);
+    iday,fday, min_N_pairs,force_PTB_SrYb,force_SyrHbNplYb,olabel,
+    whichoutput); //yay! So few parameters!
   std::cout<<"Time to analyse data: "<<timer.lap_reading_str()<<"\n";
 
   std::cout<<"\nTotal time: "<<timer.reading_str()<<"\n";
@@ -163,11 +178,33 @@ void dmSearch_tau_int(
   const ClockNetwork &net, int teff_min, int teff_max, int nteff,
   TDProfile profile, int nJeffW, double n_sig, double iday, double fday,
   int min_N_pairs, bool force_PTB_SrYb, bool force_SyrHbNplYb,
-  std::string olabel)
+  std::string olabel, WhichOutput whichoutput)
 /*
 
 */
 {
+
+  bool outputLimit = true;
+  bool outputR = false;
+  switch(whichoutput){
+    case WhichOutput::limit :
+      outputLimit = true;
+      outputR = false;
+      break;
+    case WhichOutput::R :
+      outputLimit = false;
+      outputR = true;
+      break;
+    case WhichOutput::limit_and_R :
+      outputLimit = true;
+      outputR = true;
+      break;
+    case WhichOutput::Rthresh :
+      outputLimit = false;
+      outputR = false;
+      std::cout<<"Rthresh Not implemented yet!\n";
+      return;
+  }
 
   int tau_avg = net.get_tau0();
   int max_bad_inJw = 0; //just leave as zero?
@@ -239,6 +276,35 @@ void dmSearch_tau_int(
 
   }// tau_eff
 
+  // for tau_eff = 60,120,1020,10020
+  // => j_eff = 1,2,17,167
+  std::cout<<"Summary of results:\n";
+  std::cout<<"tau_eff  da_max    Da         Rmax   Tobs\n";
+  for(size_t i=0; i<jeff_grid.size(); i++){
+    auto jf = jeff_grid[i];
+    if(jf==1 || jf==2 || jf==17 || jf==167)
+      printf("%5is   %7.1e   %7.1e  %6.2f   %5.2fhr\n",
+      jf*tau_avg,da_max[i],Del_da[i],R_max[i],T_obs[i]);
+  }
+  std::cout<<"\n";
+
+  if(outputLimit)
+    outputConstraints(jeff_grid,tau_avg,da_max,Del_da,T_obs,n_sig,olabel);
+
+  if(outputR)
+    outputR_teff(jeff_grid,tau_avg,R_max,da_max, Del_da,T_obs, olabel);
+
+}
+
+
+//******************************************************************************
+void outputConstraints(
+  const std::vector<int> &jeff_grid, int tau_avg,
+  const std::vector<double> &da_max,
+  const std::vector<double> &Del_da,
+  const std::vector<double> &T_obs,
+  double n_sig, const std::string &olabel)
+{
   //Define output grids for limits.
   //(hard-coded output grids!)
   int odim_T = 128;
@@ -262,6 +328,7 @@ void dmSearch_tau_int(
 
   //Sort the limits from the tau_eff grid into the tau_int grid
   //Taking observation time into account for T
+  //Note: tau_int << T (otherwise, not transient! take 2x?)
   for(size_t iT=0; iT<T_grid.size(); iT++){
     double T = T_grid[iT];
     for(size_t iteff=0; iteff<jeff_grid.size(); iteff++){
@@ -272,7 +339,7 @@ void dmSearch_tau_int(
       for(size_t itint=0; itint<tint_grid.size(); itint++){
         double t_int = tint_grid[itint];
         if(t_int<t_eff) continue;
-        if(t_int > 0.1*T*60.*60.)  continue; //XXX
+        if(t_int > 0.5*T*60.*60.)  continue; // tau_int << T [secs/hours]
         double dX_prev = dX[iT][itint];
         if(da<dX_prev || dX_prev==0) dX[iT][itint] = da;
       }
@@ -298,6 +365,36 @@ void dmSearch_tau_int(
       ofs<<dX[i_T][i_tint]<<" ";
     }
     ofs<<"\n";
+  }
+  ofs.close();
+}
+
+
+//******************************************************************************
+void outputR_teff(const std::vector<int> &jeff_grid, int tau_avg,
+  const std::vector<double> &R_max,
+  const std::vector<double> &da_max, const std::vector<double> &Del_da,
+  const std::vector<double> &T_obs, const std::string &olabel)
+/*
+Writes out results (R_max, da_max etc.)
+as a function of tau_eff [not tau_int].
+Each point will have different T_obs! (also outputted)
+*/
+{
+  // Form:  tau_eff | R da Del_da T_obs
+  std::string ofname = "R_teff"+olabel+".txt";
+  std::cout<<"Writing out results (Function of tau_eff) to: "
+    <<ofname<<"\n";
+  std::ofstream ofs(ofname);
+  ofs<<"tau_eff R damax Delda Tobs\n";
+  ofs.precision(4);
+
+  for(size_t i=0; i<jeff_grid.size(); i++){
+    ofs<<jeff_grid[i]*tau_avg<<" "
+      <<R_max[i]<<" "
+      <<da_max[i]<<" "
+      <<Del_da[i]<<" "
+      <<T_obs[i]<<"\n";
   }
   ofs.close();
 
