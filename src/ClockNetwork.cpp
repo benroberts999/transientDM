@@ -95,6 +95,7 @@ indexes, in order of best to worst! (by sigma^2/kappa)
   std::vector<std::string> clock_list;
   clock_list.reserve(2*_ranked_index_list.size());
   indep_pairs.clear();
+  indep_pairs.reserve(2); //in theory, should be bigger. But i know only ever 2
 
   for(auto i : _ranked_index_list){
     //Check bounds (make sure this clock pair has recorded data during window):

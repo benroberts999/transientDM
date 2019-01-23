@@ -6,6 +6,8 @@
 #include <string>
 #include <fstream>
 #include <cmath>
+#include <algorithm>
+#include <numeric>
 
 enum class WhichOutput{ limit, R,  limit_and_R, Rthresh};
 
@@ -27,6 +29,12 @@ void outputR_teff(const std::vector<int> &jeff_grid, int tau_avg,
   const std::vector<double> &R_max,
   const std::vector<double> &da_max, const std::vector<double> &Del_da,
   const std::vector<double> &T_obs, const std::string &olabel);
+
+void calculateThreshold(
+  ClockNetwork &net, int teff_min, int teff_max, int nteff,
+  TDProfile profile, int nJeffW, double iday, double fday,
+  int min_N_pairs, bool force_PTB_SrYb, bool force_SyrHbNplYb,
+  std::string olabel);
 
 
 //******************************************************************************
@@ -112,14 +120,17 @@ int main(){
     std::cout<<"Assuming a flat profile.\n";
   std::cout<<"\n";
 
-  // std::cout<<"\nRandomising:\n"<<std::flush;
-  // net.replaceWithRandomNoise(FillGaps::yes);
-  // std::cout<<"Randomised.\n"<<std::flush;
-
   timer.start();
-  dmSearch_tau_int(net, teff_min,teff_max,nteff, profile,nJeffW,n_sig,
-    iday,fday, min_N_pairs,force_PTB_SrYb,force_SyrHbNplYb,olabel,
-    whichoutput); //yay! So few parameters!
+  switch(whichoutput){
+    case WhichOutput::Rthresh :
+      calculateThreshold(net,teff_min,teff_max,nteff,profile,nJeffW,iday,fday,
+        min_N_pairs, force_PTB_SrYb, force_SyrHbNplYb,olabel);
+      break;
+    default :
+      dmSearch_tau_int(net, teff_min,teff_max,nteff, profile,nJeffW,n_sig,
+        iday,fday, min_N_pairs,force_PTB_SrYb,force_SyrHbNplYb,olabel,
+        whichoutput); //yay! So few parameters!
+  }
   std::cout<<"Time to analyse data: "<<timer.lap_reading_str()<<"\n";
 
   std::cout<<"\nTotal time: "<<timer.reading_str()<<"\n";
@@ -395,6 +406,147 @@ Each point will have different T_obs! (also outputted)
       <<da_max[i]<<" "
       <<Del_da[i]<<" "
       <<T_obs[i]<<"\n";
+  }
+  ofs.close();
+
+}
+
+
+//******************************************************************************
+void calculateThreshold(
+  ClockNetwork &net, int teff_min, int teff_max, int nteff,
+  TDProfile profile, int nJeffW, double iday, double fday,
+  int min_N_pairs, bool force_PTB_SrYb, bool force_SyrHbNplYb,
+  std::string olabel)
+/*
+Calculates R (SNR) threshold.
+Simulates data, num_trials times.
+Takes the average of the num_avg worst R's
+num_trials = num_avg*100
+==> roughly, gives 99% C.L
+*/
+{
+  int tau_avg = net.get_tau0();
+  int max_bad_inJw = 0; //just leave as zero?
+
+  //initial/final epochs to search. (Epochs are time/tau_0.)
+  //Convert days -> seconds -> epochs
+  long j_init = (long) (iday*24*60*60 / tau_avg); //in epochs!
+  long j_fin = (long) ((fday*24*60*60) / tau_avg) + 1;
+
+  //Convert tau_eff (=tau_int) to j_eff (epoch)
+  int jeff_min = teff_min/tau_avg;
+  int jeff_max = teff_max/tau_avg;
+  //Define the tau_eff grid (exponentially spaced grid):
+  std::vector<int> jeff_grid;
+  defineIntegerLogGrid(jeff_grid, jeff_min, jeff_max, nteff);
+
+  int N_tot_pairs = net.get_NtotPairs();
+
+  int num_avg = 10;
+  int num_trials = num_avg*100; //5*num_avgd_trials; //integer multiple!
+
+  std::vector<std::vector<double> > R_trials(num_trials,
+    std::vector<double>(nteff));
+
+  for(int trial = 0; trial < num_trials; trial++){
+
+    //Arrays to store results:
+    std::vector<double> &R_max = R_trials[trial];
+
+    net.replaceWithRandomNoise(FillGaps::no);
+
+    #pragma omp parallel for
+    for(size_t it=0; it<jeff_grid.size(); it++){
+      int j_eff = jeff_grid[it];
+      //signal template:
+      std::vector<std::vector<double> > s;
+      s.reserve(N_tot_pairs);
+      net.genSignalTemplate(s,nJeffW,j_eff, profile);
+      int Jw = (int)s[0].size(); //store window size
+      //Loop over j0 (t0): note: jbeg is _beginning_ of Jw window!
+      long j_step = 1; //or tau_eff? tau_eff/2? Makes little diff!
+      // long num_j_used = 0; //count
+      for(long jbeg = j_init; jbeg<=j_fin; jbeg+=j_step){
+        //Form the independent sub-network:
+        std::vector<int> indep_pairs;
+        net.formIndependentSubnet(indep_pairs,jbeg,Jw,max_bad_inJw,
+          force_PTB_SrYb,force_SyrHbNplYb);
+        if((int)indep_pairs.size()<min_N_pairs) continue;
+        //Maximise R
+        auto xHs = net.calculate_dHs_sHs(indep_pairs,s,jbeg);
+        double R = fabs(xHs.dHs)/sqrt(2*xHs.sHs);
+        if(R>R_max[it]) R_max[it] = R;
+      }// j (t0) loop
+    }// tau_eff
+
+  }//Trials
+
+
+  std::vector<double> R_max(nteff);
+  std::vector<double> R_avg(nteff);
+  // //Find the largest (+smallest) num_avg values
+  //We want to find the largest n values in M array.
+  // (1) Push first n values into new array, A.
+  // (2) Sort A.
+  //  Loop: from n->M
+  //  |--> (3) Get next value.
+  //  |    (4) Check if it's larger than one of the current values.
+  //  |    (5) If so: insert in into A (in correct location),
+  //  |____    and drop last element.
+  for(int j = 0; j < nteff; j++){
+    double R_tot_av = 0;
+    std::vector<double> max_v; //(num_avg);
+    max_v.reserve(num_avg + 1);
+    for(int t = 0; t<num_avg; t++){
+      max_v.push_back(R_trials[t][j]); //check??
+      R_tot_av += R_trials[t][j];
+    }
+    std::sort (max_v.begin(), max_v.end(), std::greater<double>());
+    for(int t = num_avg; t<num_trials; t++){
+      R_tot_av += R_trials[t][j];
+      double newv = R_trials[t][j];
+      for(int k = 0; k<num_avg; k++){
+        if(newv > max_v[k]){
+          max_v.insert(max_v.begin()+k,newv);
+          max_v.pop_back();
+          break;
+        }
+      }
+    }
+    //average maximum num_avg values (max_v)
+    double sum = std::accumulate(max_v.begin(), max_v.end(), 0.0);
+    double mean = sum / num_avg;
+    R_max[j] = mean;
+    R_tot_av /= num_trials;
+    R_avg[j] = R_tot_av;
+  }
+
+  std::cout<<"Summary of threshold calc:\n";
+  std::cout<<"  nb: R_thresh is calculated as the average of the: \n"<<num_avg
+    <<"  worst(largest) R_max's [for each given tau], out of a total of: \n"
+    <<"  "<<num_trials<<" trails (roghly, 99 percentile).\n";
+  std::cout<<"|tau_eff    R_mean    R_thresh|\n";
+  for(size_t i=0; i<jeff_grid.size(); i++){
+    auto jf = jeff_grid[i];
+    if(jf==1 || jf==2 || jf==17 || jf==167)
+      printf("|%5is    %7.4f   %7.4f  |\n",
+      jf*tau_avg,R_avg[i],R_max[i]);
+  }
+  std::cout<<"\n";
+
+  // Form:  tau_eff | R da Del_da T_obs
+  std::string ofname = "R_thresh"+olabel+".txt";
+  std::cout<<"Writing out results (threshold, fn of tau_eff) to: "
+    <<ofname<<"\n";
+  std::ofstream ofs(ofname);
+  ofs<<"tau_eff R_mean R_thresh\n";
+  ofs.precision(4);
+  for(size_t i=0; i<jeff_grid.size(); i++){
+    ofs<<jeff_grid[i]*tau_avg<<" "
+      <<R_avg[i]<<" "
+      <<R_max[i]<<" "
+      <<"\n";
   }
   ofs.close();
 
