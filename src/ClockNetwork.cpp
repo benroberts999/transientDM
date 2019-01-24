@@ -154,6 +154,22 @@ indexes, in order of best to worst! (by sigma^2/kappa)
 
 
 //******************************************************************************
+void ClockNetwork::injectFakeEvent(std::vector<int> &indep_pairs,
+  double da0, std::vector<std::vector<double> > &s, long beg_epoch)
+{
+
+  auto Jw = s[0].size();
+  for(auto i : indep_pairs){
+    long j_beg_i = beg_epoch - _initial_epoch[i];
+    for(auto j=0ul; j<Jw; j++){
+      _delta_omega[i][j_beg_i + j] += da0*s[i][j];
+    }
+  }
+
+}
+
+
+//******************************************************************************
 Result_xHs ClockNetwork::calculate_dHs_sHs(
   const std::vector<int> &indep_pairs,
   const std::vector<std::vector<double> > &s, long beg_epoch) const
@@ -207,13 +223,17 @@ Note: j_int := tau_int / tau_0
 
   //Define a function pointer, to switch between TD profile options
   double (*dmSignal)(double, double, double, double, double);
-  switch(profile){
-    case TDProfile::Gaussian : dmSignal = &DMsignalTemplate::s_Gaussian;
-      break;
-    case TDProfile::Flat : dmSignal = &DMsignalTemplate::s_topHat;
-      break;
-    default : std::cerr<<"\nFAIL CN 187: invalid template option?\n";
-  }
+  dmSignal = &DMsignalTemplate::s_Gaussian;
+  if(profile == TDProfile::Flat)
+    dmSignal = &DMsignalTemplate::s_topHat;
+
+  // switch(profile){
+  //   case TDProfile::Gaussian : dmSignal = &DMsignalTemplate::s_Gaussian;
+  //     break;
+  //   case TDProfile::Flat : dmSignal = &DMsignalTemplate::s_topHat;
+  //     break;
+  //   default : std::cerr<<"\nFAIL CN 187: invalid template option?\n";
+  // }
 
   //Create vector of s/K_AB.
   // s if different for each clock, but s/K_AB is the same!

@@ -53,13 +53,20 @@ int main(){
   std::string olabel;
   WhichOutput whichoutput; //enum for what output/calculation to do
 
+  //parameters for injecting fake event
+  bool inject_fake;
+  bool random_inject;
+  double da0_inject;
+  double tau_inject;
+  double day_inject;
+
   int nJeffW = 1; //window multiplier (not read from file)
 
   //Read in from input file:
   {
     std::ifstream ifs;
     std::string jnk;
-    int iPSY, iSHNY, iP, iwhat;
+    int iPSY, iSHNY, iP, iwhat, irand;
     ifs.open("transientDM.in");
     ifs >> clock_list_infn;                 getline(ifs,jnk);
     ifs >> iday >> fday;                    getline(ifs,jnk);
@@ -70,6 +77,8 @@ int main(){
     ifs >> n_sig;                           getline(ifs,jnk);
     ifs >> iwhat;                           getline(ifs,jnk);
     ifs >> olabel;                          getline(ifs,jnk);
+    ifs >> da0_inject >> tau_inject
+        >> day_inject >> irand;             getline(ifs,jnk);
     ifs.close();
     force_PTB_SrYb   = (iPSY ==1) ? true : false;
     force_SyrHbNplYb = (iSHNY==1) ? true : false;
@@ -80,6 +89,8 @@ int main(){
     else if(iwhat==2) whichoutput = WhichOutput::limit_and_R;
     else if(iwhat==3) whichoutput = WhichOutput::Rthresh;
     else whichoutput = WhichOutput::limit; //default..
+    inject_fake = (da0_inject==0) ? false : true;
+    random_inject = (irand==1) ? true : false;
   }
 
   //Some checks for valid input data:
@@ -104,6 +115,42 @@ int main(){
   if(N_tot_pairs < min_N_pairs){
     std::cerr<<"No clocks? Check data file paths\n";
     return 1;
+  }
+
+  //Here: If necisary, inject a fake event (for testing!)
+  if(inject_fake){
+    if(random_inject) net.replaceWithRandomNoise(FillGaps::no);
+    int jeff_inject = (int) (tau_inject/tau_avg);
+    long j_earliest = (long) ((day_inject)*24*60*60 / tau_avg);
+    long j_latest = (long) ((100)*24*60*60 / tau_avg);
+    std::vector<std::vector<double> > s;
+    net.genSignalTemplate(s,nJeffW,jeff_inject,profile);
+    int Jw = (int)s[0].size(); //store window
+    std::vector<int> indep_pairs;
+
+    long j_in=0;
+    int N_pairs =0;
+    for(long j=j_earliest; j<j_latest; j++){
+      j_in = j;
+      net.formIndependentSubnet(indep_pairs,j_in,Jw,0,
+        force_PTB_SrYb,force_SyrHbNplYb);
+      N_pairs = (int)indep_pairs.size();
+      if(N_pairs >= min_N_pairs) break; //found spot!
+    }
+    if(N_pairs<min_N_pairs){
+      std::cerr<<"Couldn't inject event!\n";
+      return 1;
+    }
+    net.injectFakeEvent(indep_pairs,da0_inject,s,j_in);
+    std::cout<<"**********************************\n";
+    std::cout<<"* Injecting a fake event, with:  \n"
+      <<"*  da0 = "<<da0_inject<<", tau_int = "<<tau_inject<<"s,    \n"
+      <<"*  at day="<<(double)j_in*tau_avg/(24*60*60)<<"= epoch: "
+      <<j_in<<"  \n";
+    if(random_inject) std::cout
+                  <<"*  (Injecting into random data). \n";
+    else std::cout<<"*  (Injecting into real data).   \n";
+    std::cout<<"**********************************\n\n";
   }
 
   //Output some info to screen:

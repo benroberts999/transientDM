@@ -35,6 +35,10 @@ public:
   int get_tau0() const;
   std::string name(int i) const;
 
+  void injectFakeEvent(
+    std::vector<int> &indep_pairs,
+    double da0, std::vector<std::vector<double> > &s, long beg_epoch);
+
   void replaceWithRandomNoise(FillGaps fill_gapsQ=FillGaps::no);
 
   //Used for the analysis:

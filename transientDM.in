@@ -5,6 +5,15 @@
 2 0 0            # Min clock pairs; Force: PTB:Yb/Sr? SYR:Hg/NPL:Yb? 1=y
 0                # Profile. 0=Gaussian. 1=flat
 1.               # n_sig [1=68%CL, 1.645=90%, 2=95.5%]
-2                # Do what? 0=limit; 1=R_max; 2=both; 3=Rthresh (not yet)
+1                # Do what? 0=limit; 1=R_max; 2=both; 3=Rthresh (not yet)
 test             # Label for output file (can be 'na' for none)
+0     1e3 19. 0  # Inject fake event. For testing. See below:
 ##################
+
+Inject fake event. 4 options:
+(1) dalta-a. If zero, no injection. typical ~1.e-16
+(2) tau_int. Typical 1.e2 - 1.e4
+(3) Day. Will inject even at first appropriate time
+    after this day (same units as above). Appropriate
+    means at least mininum allowable num. of clocks present.
+(4) Randomise data? 0=no. 1=Replace real data with random noise.

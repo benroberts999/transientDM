@@ -21,6 +21,7 @@ Each relevent option is explained inside the _transientDM.in_. Here is a basic l
   * Use Gaussian or flat profile. Gaussian is default. Makes essentially no difference.
   * n_sig sets the confidence level, limit = |max| + n_sig * error
   (n=1 => 68% CL, n=1.645 => 90% etc.)
+  * Option to inject a fake event (either into real data, or randomly generated noise). This gives a good test of the method.
 
 
 ### notes
@@ -42,10 +43,42 @@ Each relevent option is explained inside the _transientDM.in_. Here is a basic l
 
 ### some example code:
 
+  *  This shows roughly the fitting procedure for a single value of tau_int and a single interaction time (t0).
+
 ```cpp
 int main() {
-  int x = 5 + 6;
+
+  // Opens the file "clocklist.in" (which contains paths to data files)
+  // Reads the data file names/locations into list: filenames
+  std::vector<std::string> filenames;
+  DataIO::getFileNames(filenames,"/path/to/clocklist.in");
+
+  // Generate "ClockNetwork" object:
+  int tau_avg = 60;    //average the data into 60s chunks
+  int max_bad_avg = 0; //don't allow any missing data points
   ClockNetwork net(filenames,tau_avg,max_bad_avg);
-  net.replaceWithRandomNoise();
+
+  // Generate the signal template (template is signal, with deltaAlpha=1)
+  std::vector<std::vector<double> > s;  //array to hold signal
+  int j_int = tau_int/tau_avg;          //Interaction duration (in epochs)
+  int nJW = 1;                          //Take 'window' to be 1*tau_int
+  net.genSignalTemplate(s,nJW,j_int);
+
+  int j0 = t0/tau_avg;    //Time to check for a DM interaction
+
+  //Form the sub-network of independent clock-pairs:
+  std::vector<int> indep_pairs;
+  net.formIndependentSubnet(indep_pairs,j0,Jw);
+
+  //Calculate the 'dHs' and 'sHs' values (see paper for definition)
+  auto xHs = net.calculate_dHs_sHs(indep_pairs,s,j0);
+
+  //Now, we can get the best-fit \delta\alpha, R, and \Delta\alpha:
+  double da_bf = fabs(xHs.dHs)/xHs.sHs;          //best-fit amplitude
+  double Delta = 1./sqrt(xHs.sHs);               //Error term
+  double R     = fabs(xHs.dHs)/sqrt(2*xHs.sHs);  //SNR ratio
+
+  //Normally, will be looped over all relevant values of tau_int.
+  //For each tau_int, loops over all values of t0 (times), maximises R and da
 }
 ```
