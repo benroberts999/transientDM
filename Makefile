@@ -9,7 +9,7 @@ OPT=-Ofast
 WARN=-Wall -Wextra -Wpedantic -Wconversion
 
 CXX=g++
-CXXFLAGS=-I$(ID) -std=c++11 $(WARN) $(OMP) $(OPTIMIZE)
+CXXFLAGS=-I$(ID) -std=c++11 $(WARN) $(OMP) $(OPT)
 
 detected_OS := $(shell uname -s) #will return the Operating system name
 $(info )
