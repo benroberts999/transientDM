@@ -21,11 +21,11 @@ void dmSearch_tau_int(
   int min_N_pairs, bool force_PTB_SrYb, bool force_SyrHbNplYb,
   std::string olabel, WhichOutput whichoutput);
 
-void outputConstraints( const std::vector<int> &jeff_grid, int tau_avg,
+void outputConstraints( const std::vector<double> &jeff_grid, int tau_avg,
   const std::vector<double> &da_max, const std::vector<double> &Del_da,
   const std::vector<double> &T_obs, double n_sig, const std::string &olabel);
 
-void outputR_teff(const std::vector<int> &jeff_grid, int tau_avg,
+void outputR_teff(const std::vector<double> &jeff_grid, int tau_avg,
   const std::vector<double> &R_max,
   const std::vector<double> &da_max, const std::vector<double> &Del_da,
   const std::vector<double> &T_obs, const std::string &olabel);
@@ -273,11 +273,12 @@ void dmSearch_tau_int(
   long j_fin = (long) ((fday*24*60*60) / tau_avg) + 1;
 
   //Convert tau_eff (=tau_int) to j_eff (epoch)
-  int jeff_min = teff_min/tau_avg;
-  int jeff_max = teff_max/tau_avg;
+  double jeff_min = teff_min/tau_avg;
+  double jeff_max = teff_max/tau_avg;
   //Define the tau_eff grid (exponentially spaced grid):
-  std::vector<int> jeff_grid;
-  defineIntegerLogGrid(jeff_grid, jeff_min, jeff_max, nteff);
+  std::vector<double> jeff_grid;
+  // defineIntegerLogGrid(jeff_grid, jeff_min, jeff_max, nteff);
+  defineDoubleLogGrid(jeff_grid, jeff_min, jeff_max, nteff);
 
   //Arrays to store results:
   std::vector<double> da_max(nteff);
@@ -289,7 +290,7 @@ void dmSearch_tau_int(
 
   #pragma omp parallel for
   for(size_t it=0; it<jeff_grid.size(); it++){
-    int j_eff = jeff_grid[it];
+    double j_eff = jeff_grid[it];
 
     //signal template:
     std::vector<std::vector<double> > s;
@@ -338,10 +339,17 @@ void dmSearch_tau_int(
   // => j_eff = 1,2,17,167
   std::cout<<"Summary of results:\n";
   std::cout<<"tau_eff  da_max    Da         Rmax   Tobs\n";
-  for(size_t i=0; i<jeff_grid.size(); i++){
+  for(size_t i=0; i<jeff_grid.size()-1; i++){
     auto jf = jeff_grid[i];
-    if(jf==1 || jf==2 || jf==17 || jf==167)
-      printf("%5is   %7.1e   %7.1e  %6.2f   %5.2fhr\n",
+    auto tf = jf*tau_avg;
+    auto tfp = jeff_grid[i+1]*tau_avg;
+    if(
+      (tf<=60. && tfp >60.)||
+      (tf<=100. && tfp >100.)||
+      (tf<=1000. && tfp >1000.)||
+      (tf<=9900. && tfp >9900.)
+    )
+      printf("%5.0fs   %7.1e   %7.1e  %6.2f   %5.2fhr\n",
       jf*tau_avg,da_max[i],Del_da[i],R_max[i],T_obs[i]);
   }
   std::cout<<"\n";
@@ -357,7 +365,7 @@ void dmSearch_tau_int(
 
 //******************************************************************************
 void outputConstraints(
-  const std::vector<int> &jeff_grid, int tau_avg,
+  const std::vector<double> &jeff_grid, int tau_avg,
   const std::vector<double> &da_max,
   const std::vector<double> &Del_da,
   const std::vector<double> &T_obs,
@@ -429,7 +437,7 @@ void outputConstraints(
 
 
 //******************************************************************************
-void outputR_teff(const std::vector<int> &jeff_grid, int tau_avg,
+void outputR_teff(const std::vector<double> &jeff_grid, int tau_avg,
   const std::vector<double> &R_max,
   const std::vector<double> &da_max, const std::vector<double> &Del_da,
   const std::vector<double> &T_obs, const std::string &olabel)
@@ -482,11 +490,11 @@ num_trials = num_avg*100
   long j_fin = (long) ((fday*24*60*60) / tau_avg) + 1;
 
   //Convert tau_eff (=tau_int) to j_eff (epoch)
-  int jeff_min = teff_min/tau_avg;
-  int jeff_max = teff_max/tau_avg;
+  double jeff_min = teff_min/tau_avg;
+  double jeff_max = teff_max/tau_avg;
   //Define the tau_eff grid (exponentially spaced grid):
-  std::vector<int> jeff_grid;
-  defineIntegerLogGrid(jeff_grid, jeff_min, jeff_max, nteff);
+  std::vector<double> jeff_grid;
+  defineDoubleLogGrid(jeff_grid, jeff_min, jeff_max, nteff);
 
   int N_tot_pairs = net.get_NtotPairs();
 
@@ -505,7 +513,7 @@ num_trials = num_avg*100
 
     #pragma omp parallel for
     for(size_t it=0; it<jeff_grid.size(); it++){
-      int j_eff = jeff_grid[it];
+      double j_eff = jeff_grid[it];
       //signal template:
       std::vector<std::vector<double> > s;
       s.reserve(N_tot_pairs);
@@ -576,8 +584,15 @@ num_trials = num_avg*100
   std::cout<<"|tau_eff    R_mean    R_thresh|\n";
   for(size_t i=0; i<jeff_grid.size(); i++){
     auto jf = jeff_grid[i];
-    if(jf==1 || jf==2 || jf==17 || jf==167)
-      printf("|%5is    %7.4f   %7.4f  |\n",
+    auto tf = jf*tau_avg;
+    auto tfp = jeff_grid[i+1]*tau_avg;
+    if(
+      (tf<=60. && tfp >60.)||
+      (tf<=100. && tfp >100.)||
+      (tf<=1000. && tfp >1000.)||
+      (tf<=9900. && tfp >9900.)
+    )
+      printf("|%5.0fs    %7.4f   %7.4f  |\n",
       jf*tau_avg,R_avg[i],R_max[i]);
   }
   std::cout<<"\n";

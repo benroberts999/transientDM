@@ -202,7 +202,7 @@ Note: stores the result in a custom struct: "Result_xHs" [defn in CN header]
 
 //******************************************************************************
 void ClockNetwork::genSignalTemplate(std::vector<std::vector<double> > &s,
-  int n_window, int j_int, TDProfile profile) const
+  int n_window, double j_int, TDProfile profile) const
 /*
 Creates a signal-template vector, s, for each clock pair:
 Defined:
@@ -214,10 +214,10 @@ Note: j_int := tau_int / tau_0
 */
 {
   //Calculate the window size:
-  int Jw = n_window * j_int;
+  int Jw = (int) (n_window * j_int);
   if(Jw%2 == 0) ++Jw; // Jw must be odd
 
-  int tint = j_int * _tau_0;
+  double tint = j_int * _tau_0;
   double j0 = 0.5*Jw - 1.;
   double t0 = j0*_tau_0;
 
@@ -226,14 +226,6 @@ Note: j_int := tau_int / tau_0
   dmSignal = &DMsignalTemplate::s_Gaussian;
   if(profile == TDProfile::Flat)
     dmSignal = &DMsignalTemplate::s_topHat;
-
-  // switch(profile){
-  //   case TDProfile::Gaussian : dmSignal = &DMsignalTemplate::s_Gaussian;
-  //     break;
-  //   case TDProfile::Flat : dmSignal = &DMsignalTemplate::s_topHat;
-  //     break;
-  //   default : std::cerr<<"\nFAIL CN 187: invalid template option?\n";
-  // }
 
   //Create vector of s/K_AB.
   // s if different for each clock, but s/K_AB is the same!

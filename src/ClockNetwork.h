@@ -43,7 +43,7 @@ public:
 
   //Used for the analysis:
   void genSignalTemplate(std::vector<std::vector<double> > &s,
-    int n_window, int j_int, TDProfile profile) const;
+    int n_window, double j_int, TDProfile profile) const;
 
   void formIndependentSubnet(std::vector<int> &indep_pairs,
     long beg_epoch, int Jw, int max_bad,
