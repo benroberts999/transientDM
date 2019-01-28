@@ -62,7 +62,7 @@ $(ID)/DataIO.h $(ID)/ChronoTimer.h
 ################################################################################
 # Link + build all final programs
 
-$(XD)/transientDM: $(OD)/transientDM.o $(OD)/ClockNetwork.o $(OD)/DataIO.o \
+$(XD)/transientDM: $(OD)/transientDM.o $(OD)/ClockNetwork.o \
 $(OD)/DMs_signalTemplates.o $(OD)/ChronoTimer.o \
 $(OD)/RNG_randomNumberGenerators.o
 	$(LINK)
