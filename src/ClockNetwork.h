@@ -53,6 +53,8 @@ public:
     const std::vector<int> &indep_pairs,
     const std::vector<std::vector<double> > &s, long beg_epoch) const;
 
+  void writeOutClockData();
+
 
 private: //data
 

@@ -11,7 +11,7 @@
 
 enum class WhichOutput{ limit, R,  limit_and_R, Rthresh};
 
-void defineIntegerLogGrid(std::vector<int> &grid, int min, int max, int N);
+//void defineIntegerLogGrid(std::vector<int> &grid, int min, int max, int N);
 void defineDoubleLogGrid(std::vector<double> &grid, double min, double max,
   int N);
 
@@ -111,6 +111,12 @@ int main(){
   ClockNetwork net(filenames,tau_avg,max_bad_avg);
   std::cout<<"Time to read files: "<<timer.lap_reading_str()<<"\n\n";
 
+  bool just_write_data_out = false; //hard-coded..used v. rarey
+  if(just_write_data_out){
+    net.writeOutClockData();
+    return 0;
+  }
+
   int N_tot_pairs = net.get_NtotPairs();
   if(N_tot_pairs < min_N_pairs){
     std::cerr<<"No clocks? Check data file paths\n";
@@ -187,31 +193,32 @@ int main(){
 
 
 //******************************************************************************
-void defineIntegerLogGrid(std::vector<int> &grid, int min, int max, int N)
-/*
-Forms a logarithmically-spaced grid of integers, between [min,max] in N steps.
-Note: Because each point is an integer, if the step-size is too small,
-you run the risk of getting 'doubles' of some grid points (same point more than
-once).
-I fix this, by just incrementing by 1 in these cases.
-Technically, this means it's possible for the actual last grid point to go
-beyond the given 'max' (if N > (max-min)), and the grid will then just be linear
-But, it _is_ guarenteed to be exactly N elements long
-*/
-{
-  grid.resize(N);
-  grid[0] = min;
-
-  for(int i=1; i<N; i++){
-    double x = double(i)/(N-1);
-    double y = min*pow(double(max)/min,x);
-    int z = (int) round(y);
-    //this is to stop "doubling up" from occuring:
-    if(i>0 && z<=grid[i-1]) z = grid[i-1]+1;
-    grid[i] = z;
-  }
-
-}
+//void defineIntegerLogGrid(std::vector<int> &grid, int min, int max, int N)
+///*
+//Forms a logarithmically-spaced grid of integers, between [min,max] in N steps.
+//Note: Because each point is an integer, if the step-size is too small,
+//you run the risk of getting 'doubles' of some grid points (same point more
+//than once).
+//I fix this, by just incrementing by 1 in these cases.
+//Technically, this means it's possible for the actual last grid point to go
+//beyond the given 'max' (if N > (max-min)), and the grid will then just be
+//linear
+//But, it _is_ guarenteed to be exactly N elements long
+//*/
+//{
+//  grid.resize(N);
+//  grid[0] = min;
+//
+//  for(int i=1; i<N; i++){
+//    double x = double(i)/(N-1);
+//    double y = min*pow(double(max)/min,x);
+//    int z = (int) round(y);
+//    //this is to stop "doubling up" from occuring:
+//    if(i>0 && z<=grid[i-1]) z = grid[i-1]+1;
+//    grid[i] = z;
+//  }
+//
+//}
 
 
 //******************************************************************************

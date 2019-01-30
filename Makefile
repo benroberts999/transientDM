@@ -5,7 +5,7 @@ OD = ./obj
 XD =.
 
 OMP=-fopenmp
-OPT=-Ofast
+OPT=-O3
 WARN=-Wall -Wextra -Wpedantic -Wconversion
 
 CXX=g++

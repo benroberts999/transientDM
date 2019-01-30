@@ -154,6 +154,29 @@ indexes, in order of best to worst! (by sigma^2/kappa)
 
 
 //******************************************************************************
+void ClockNetwork::writeOutClockData()
+{
+
+  // for(size_t i=0; i<_delta_omega.size(); i++){
+  for(auto i : _ranked_index_list){
+    std::vector<double> x, y;
+    auto N = _delta_omega[i].size();
+    x.reserve(N);
+    y.reserve(N);
+    auto j0 = _initial_epoch[i];
+    for(size_t j=0; j<N; j++){
+      double day = double((j0 + j)*_tau_0)/(24.*60*60);
+      if(!_data_ok[i][j]) continue;
+      x.push_back(day);
+      y.push_back(_delta_omega[i][j]);
+    }
+    std::string out_fname = "datplot_"+name(i)+".txt";
+    DataIO::write_text_XY(out_fname,x,y);
+  }
+
+}
+
+//******************************************************************************
 void ClockNetwork::injectFakeEvent(std::vector<int> &indep_pairs,
   double da0, std::vector<std::vector<double> > &s, long beg_epoch)
 {

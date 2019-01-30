@@ -78,4 +78,29 @@ return 2 = something worse happened.. bug in program, or data file is messed up
   return 0;
 }
 
+//******************************************************************************
+template <typename T, typename U>
+int write_text_XY(const std::string &out_fname, std::vector<T> &x,
+      std::vector<U> &y, bool append=false)
+/*
+return 0 = all good.
+return 1 = file is empty or doesn't exist (or can't be opened)
+return 2 = something worse happened.. bug in program, or data file is messed up
+*/
+{
+  auto wr_mode = append? std::ios_base::app : std::ios_base::out;
+  std::ofstream ofs(out_fname.c_str(), wr_mode);
+
+  if(x.size()!=y.size()){
+    std::cerr<<"\nFail 96 write_text_XY: vectors unequal length!\n";
+    return 2;
+  }
+
+  for(size_t i=0; i<x.size(); i++)
+    ofs<<x[i]<<" "<<y[i]<<"\n";
+
+  return 0;
 }
+
+
+}//namespace
