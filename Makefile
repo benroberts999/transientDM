@@ -4,11 +4,13 @@ ID = ./src
 OD = ./obj
 XD =.
 
-OMP=-fopenmp
-OPT=-O3
-WARN=-Wall -Wextra -Wpedantic -Wconversion
+CXX=g++ #clang++
 
-CXX=g++
+OMP=-fopenmp #-fopenmp=libiomp5 ##needed for clang++
+
+OPT=-O3
+WARN=-Wall -Wextra -Wpedantic -Wdouble-promotion #-Wconversion
+
 CXXFLAGS=-I$(ID) -std=c++11 $(WARN) $(OMP) $(OPT)
 
 detected_OS := $(shell uname -s) #will return the Operating system name
@@ -37,7 +39,7 @@ all: checkObj checkXdir $(ALLEXES)
 
 #All programs depend on these generic common headers:
 COMH = $(addprefix $(ID)/, \
- ClockInfo.h \
+ ClockInfo.h /DataIO.h \
 )
 
 # Rule for files that have .cpp AND a .h file
@@ -51,12 +53,12 @@ $(OD)/%.o: $(ID)/%.cpp $(COMH)
 	$(COMP)
 
 # Here: List rules for any other progs that don't fit above rules?
-$(OD)/main.o: $(ID)/main.cpp $(COMH) $(ID)/ClockNetwork.h $(ID)/DataIO.h \
+$(OD)/main.o: $(ID)/main.cpp $(COMH) $(ID)/ClockNetwork.h \
 $(ID)/ChronoTimer.h
 	$(COMP)
 
 $(OD)/transientDM.o: $(ID)/transientDM.cpp $(COMH) $(ID)/ClockNetwork.h \
-$(ID)/DataIO.h $(ID)/ChronoTimer.h
+$(ID)/ChronoTimer.h
 	$(COMP)
 
 ################################################################################
