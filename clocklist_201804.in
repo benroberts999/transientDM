@@ -1,0 +1,24 @@
+# '!' or '#' denotes comment - code will skip that line.
+# First line is absolute directory. Then file names.
+/obs/broberts/link_data/201804/
+cppva_diff_PTBSr-PTBYb.dat
+cppva_diff_PTBYb-NPLSr.dat
+cppva_diff_SYRTESrB-PTBYb.dat
+cppva_diff_SYRTESr2-PTBYb.dat
+cppva_diff_SYRTESr2-NPLSr.dat
+cppva_diff_SYRTESr2-PTBSr.dat
+cppva_diff_SYRTESrB-NPLSr.dat
+cppva_diff_SYRTESrB-PTBSr.dat
+cppva_diff_PTBSr-NPLSr.dat
+cppva_diff_SYRTESrB-SYRTESr2.dat
+!!! Many of these \/ seem to be 2s sampled?
+!cppva_diff_SYRTESr2-SYRTEFO2Cs.dat
+!cppva_diff_SYRTESr2-SYRTEFO2Rb.dat
+!cppva_diff_SYRTEFO2Cs-NPLSr.dat
+!cppva_diff_SYRTEFO2Cs-PTBSr.dat
+!cppva_diff_SYRTEFO2Cs-PTBYb.dat
+!cppva_diff_SYRTEFO2Cs-SYRTEFO2Rb.dat
+!cppva_diff_SYRTEFO2Rb-NPLSr.dat
+!cppva_diff_SYRTEFO2Rb-PTBSr.dat
+!cppva_diff_SYRTESrB-SYRTEFO2Cs.dat
+!cppva_diff_SYRTESrB-SYRTEFO2Rb.dat

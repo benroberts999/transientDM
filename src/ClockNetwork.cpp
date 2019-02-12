@@ -9,7 +9,8 @@
 
 //******************************************************************************
 ClockNetwork::ClockNetwork(const std::vector<std::string> &filenames,
-                           int tau_avg, int max_bad)
+                           std::string prefix, std::string suffix,
+                           bool skip_bad_bits, int tau_avg, int max_bad)
     : _tau_0(tau_avg)
 /*
 Note: Everywhere inside assumes white noise.
@@ -22,7 +23,7 @@ There are no checks for this
   for (size_t i = 0; i < filenames.size(); i++) {
     std::cout << "Reading input data file: " << i + 1 << "/" << filenames.size()
               << "         \r" << std::flush;
-    readInDataFile(filenames[i], max_bad);
+    readInDataFile(filenames[i], max_bad, prefix, suffix, skip_bad_bits);
   }
   std::cout << "\n\n";
 
@@ -32,15 +33,15 @@ There are no checks for this
 
   // print a summary of clocks
   std::cout << "Network summary:\n";
-  for (int i = 0; i < 57; i++)
+  for (int i = 0; i < 61; i++)
     std::cout << "_";
   std::cout << "\n";
   for (auto i : _ranked_index_list) {
-    printf("|%17s: dK=%5.2f, x0=%8.1e, sig=%8.1e |\n", name(i).c_str(),
+    printf("|%21s: dK=%5.2f, x0=%8.1e, sig=%8.1e |\n", name(i).c_str(),
            _K_AB[i], _mean[i], _sigma0[i]);
   }
   std::cout << "|";
-  for (int i = 0; i < 55; i++)
+  for (int i = 0; i < 59; i++)
     std::cout << "_";
   std::cout << "|\n";
 
@@ -272,7 +273,9 @@ Note: j_int := tau_int / tau_0
 }
 
 //******************************************************************************
-int ClockNetwork::readInDataFile(const std::string &in_fname, int max_bad)
+int ClockNetwork::readInDataFile(const std::string &in_fname, int max_bad,
+                                 std::string prefix, std::string suffix,
+                                 bool skip_bad_bits)
 // XXX Update for other formats!
 /*
 Time stored as seconds since MJD.
@@ -282,7 +285,9 @@ Epochs are time / tau_0
 
   std::vector<double> times;
   std::vector<double> tmp_dw;
-  int ok = DataIO::read_text_XY(in_fname, times, tmp_dw);
+  // int ok = DataIO::read_text_XY(in_fname, times, tmp_dw);
+  int ok =
+      DataIO::read_text_XY_conditionalZ(in_fname, times, tmp_dw, skip_bad_bits);
   if (ok != 0)
     return ok;
 
@@ -377,17 +382,18 @@ Epochs are time / tau_0
   // store the mean:
   _mean.emplace_back(oa_sum / double(oa_good));
   // Get clock info (K's, lab positions etc.)
-  fetchClockInfo(in_fname);
+  fetchClockInfo(in_fname, prefix, suffix);
 
   return 0;
 }
 
 //******************************************************************************
-void ClockNetwork::fetchClockInfo(const std::string &fn) {
+void ClockNetwork::fetchClockInfo(const std::string &fn, std::string prefix,
+                                  std::string suffix) {
   // XXX Update for other formats!
-  std::string prefix = "cppdiff_";
+  // std::string prefix = "cppdiff_";
   std::string joiner = "-";
-  std::string suffix = ".dat";
+  // std::string suffix = ".dat";
 
   int i = (int)(fn.find(prefix) + prefix.length());
   int j = (int)fn.find(joiner, i);

@@ -24,7 +24,8 @@ struct Result_xHs {
 class ClockNetwork {
 
 public:
-  ClockNetwork(const std::vector<std::string> &filenames, int tau_avg,
+  ClockNetwork(const std::vector<std::string> &filenames, std::string prefix,
+               std::string suffix, bool skip_bad_bits, int tau_avg,
                int max_bad = 0);
 
   // getters:
@@ -71,8 +72,11 @@ private:            // data
   std::vector<double> _K_AB;
 
 private: // methods
-  int readInDataFile(const std::string &in_fname, int max_bad = 0);
-  void fetchClockInfo(const std::string &fn);
+  int readInDataFile(const std::string &in_fname, int max_bad,
+                     std::string prefix, std::string suffix,
+                     bool skip_bad_bits);
+  void fetchClockInfo(const std::string &fn, std::string prefix,
+                      std::string suffix);
   void calculateSigma0();
   void rankClockPairs();
 };

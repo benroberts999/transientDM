@@ -44,7 +44,9 @@ int main() {
   ChronoTimer timer;
 
   // Input parameters (to be read from file)
-  std::string clock_list_infn;           // File that contains clock list
+  std::string clock_list_infn; // File that contains clock list
+  std::string prefix, suffix;  // data file prefix, suffix
+  bool skip_bad_bits;
   double iday, fday;                     // First/last day
   int tau_avg, max_bad_avg;              // average data?
   int teff_min, teff_max, nteff;         // tau_eff grid
@@ -66,13 +68,14 @@ int main() {
 
   // Read in from input file:
   {
-    int iPSY, iSHNY, iP, iwhat, irand;
+    int iskip, iPSY, iSHNY, iP, iwhat, irand;
     auto tp = std::forward_as_tuple(
-        clock_list_infn, iday, fday, tau_avg, max_bad_avg, teff_min, teff_max,
-        nteff, min_N_pairs, iPSY, iSHNY, iP, n_sig, iwhat, olabel, da0_inject,
-        tau_inject, day_inject, irand);
+        clock_list_infn, prefix, suffix, iskip, iday, fday, tau_avg,
+        max_bad_avg, teff_min, teff_max, nteff, min_N_pairs, iPSY, iSHNY, iP,
+        n_sig, iwhat, olabel, da0_inject, tau_inject, day_inject, irand);
     DataIO::setInputParameters("transientDM.in", tp);
     // Parse some of the input options into ``pc''-friendly form
+    skip_bad_bits = (iskip == 1) ? true : false;
     force_PTB_SrYb = (iPSY == 1) ? true : false;
     force_SyrHbNplYb = (iSHNY == 1) ? true : false;
     profile = (iP == 1) ? TDProfile::Flat : TDProfile::Gaussian;
@@ -109,7 +112,8 @@ int main() {
 
   // read in the clock data + instantiate ClockNetwork object:
   timer.start();
-  ClockNetwork net(filenames, tau_avg, max_bad_avg);
+  ClockNetwork net(filenames, prefix, suffix, skip_bad_bits, tau_avg,
+                   max_bad_avg);
   std::cout << "Time to read files: " << timer.lap_reading_str() << "\n\n";
 
   bool just_write_data_out = false; // hard-coded..used v. rarey

@@ -1,5 +1,6 @@
 #pragma once
 #include <fstream>
+#include <iomanip>
 #include <iostream>
 #include <sstream>
 #include <string>
@@ -86,6 +87,49 @@ return 2 = something worse happened.. bug in program, or data file is messed up
 
 //******************************************************************************
 template <typename T, typename U>
+int read_text_XY_conditionalZ(const std::string &in_fname, std::vector<T> &x,
+                              std::vector<U> &y, bool skip_bad_bit = true,
+                              bool append = false)
+/*
+
+return 0 = all good.
+return 1 = file is empty or doesn't exist (or can't be opened)
+return 2 = something worse happened.. bug in program, or data file is messed up
+*/
+{
+  std::ifstream ifs;
+  ifs.open(in_fname.c_str());
+  if (!ifs.good())
+    return 1;
+  std::string str_line;
+  if (!append) {
+    x.clear();
+    y.clear();
+  }
+
+  while (getline(ifs, str_line)) {
+    if (str_line.size() == 0)
+      continue;
+    std::stringstream ss(str_line);
+    T tmp_x = 0;
+    U tmp_y = 0;
+    int tmp_z = 1;
+    ss >> tmp_x >> tmp_y >> tmp_z;
+    if (tmp_z == 0 && skip_bad_bit) // bad input bit
+      continue;
+    x.push_back(tmp_x);
+    y.push_back(tmp_y);
+  }
+  ifs.close();
+  if (x.size() != y.size())
+    return 2;
+  if (x.size() == 0)
+    return 1;
+  return 0;
+}
+
+//******************************************************************************
+template <typename T, typename U>
 int write_text_XY(const std::string &out_fname, std::vector<T> &x,
                   std::vector<U> &y, bool append = false)
 /*
@@ -102,6 +146,7 @@ return 2 = something worse happened.. bug in program, or data file is messed up
     return 2;
   }
 
+  ofs << std::setprecision(10);
   for (size_t i = 0; i < x.size(); i++)
     ofs << x[i] << " " << y[i] << "\n";
 

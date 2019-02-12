@@ -1,16 +1,25 @@
-./clocklist.in   # File that contains list of clocks
-0. 50.           # init/fin day to search (since MJD:57900)
-60 0             # tau_avg, allowable skipped-points (in avg)
-60 10000 512     # tau_int: min, max, N_pts
-2 0 0            # Min clock pairs; Force: PTB:Yb/Sr? SYR:Hg/NPL:Yb? 1=y
-0                # Profile. 0=Gaussian. 1=flat
-1.               # n_sig [1=68%CL, 1.645=90%, 2=95.5%]
-2                # Do what? 0=limit; 1=R_max; 2=both; 3=Rthresh (not yet)
-test             # Label for output file (can be 'na' for none)
-0     1e3 19. 0  # Inject fake event. For testing. See below:
-##################
+./clocklist_201812.in            ! File that contains list of clock data files
+cppv1_diff_ .dat             ! data file prefix, suffix *
+0                         ! Skip bad bits? 1=yes. 0=no. **
+550. 570.                 ! init/fin day to search (since MJD:57900)
+60  0                     ! tau_avg, allowable skipped-points (in avg)
+60 10000 128              ! tau_int: min, max, N_pts
+2 0 0                     ! Min # pairs; Force: PTB:Yb/Sr? SYR:Hg/NPL:Yb? 1=y
+0                         ! Profile. 0=Gaussian. 1=flat
+1.                        ! n_sig [1=68%CL, 1.645=90%, 2=95.5%]
+0                         ! What? 0=limit; 1=R_max; 2=both; 3=Rthresh
+test                      ! Label for output file (can be 'na' for none)
+0     1e3    19.   0      ! Inject fake event. For testing. See below***:
+!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-Inject fake event. 4 options:
+* e.g.:
+data file: cppva_diff_PTBSr-PTBYb.dat
+prefix: cppva_diff_
+suffix: .dat
+
+** If reading from a two-D text file, assumes all points are good
+
+*** Inject fake event. 4 options:
 (1) dalta-a. If zero, no injection. typical ~1.e-16
 (2) tau_int. Typical 1.e2 - 1.e4
 (3) Day. Will inject even at first appropriate time
