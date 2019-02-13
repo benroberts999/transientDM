@@ -1,0 +1,34 @@
+# '!' or '#' denotes comment - code will skip that line.
+# First line is absolute directory. Then file names.
+/obs/broberts/link_data/
+2017/dnu_PTBSr-PTBYb.dat
+2017/dnu_NPLSr-NPLYb.dat
+2017/dnu_PTBSr-NPLYb.dat
+2017/dnu_PTBYb-NPLSr.dat
+2017/dnu_SYRTEHg-PTBYb.dat
+2017/dnu_SYRTEHg-PTBSr.dat
+2017/dnu_SYRTEHg-NPLYb.dat
+2017/dnu_SYRTEHg-NPLSr.dat
+2017/dnu_SYRTESr2-PTBYb.dat
+2017/dnu_SYRTESrB-PTBYb.dat
+! 2017/dnu_PTBYb-NPLYb.dat
+! 2017/dnu_PTBSr-NPLSr.dat
+! 2017/dnu_SYRTESr2-NPLSr.dat
+! 2017/dnu_SYRTESrB-NPLSr.dat
+! 2017/dnu_SYRTESrB-SYRTESr2.dat
+!!!
+201812/dnu_NPLSr-NPLYb.dat
+201812/dnu_PTBYb-NPLSr.dat
+201812/dnu_SYRTEHg-NPLSr.dat
+201812/dnu_SYRTEHg-NPLYb.dat
+201812/dnu_SYRTEHg-PTBYb.dat
+201812/dnu_SYRTEHg-SYRTESrB.dat
+201812/dnu_SYRTESr2-NPLYb.dat
+201812/dnu_SYRTESr2-PTBYb.dat
+201812/dnu_SYRTESr2-SYRTEHg.dat
+201812/dnu_SYRTESrB-NPLYb.dat
+201812/dnu_SYRTESrB-PTBYb.dat
+! 201812/dnu_SYRTESr2-SYRTESrB.dat
+! 201812/dnu_PTBYb-NPLYb.dat
+! 201812/dnu_SYRTESrB-NPLSr.dat
+! 201812/dnu_SYRTESr2-NPLSr.dat

@@ -1,0 +1,18 @@
+# '!' or '#' denotes comment - code will skip that line.
+# First line is absolute directory. Then file names.
+/obs/broberts/link_data/2017/
+dnu_PTBSr-PTBYb.dat
+dnu_NPLSr-NPLYb.dat
+dnu_PTBSr-NPLYb.dat
+dnu_PTBYb-NPLSr.dat
+dnu_SYRTEHg-PTBYb.dat
+dnu_SYRTEHg-PTBSr.dat
+dnu_SYRTEHg-NPLYb.dat
+dnu_SYRTEHg-NPLSr.dat
+dnu_SYRTESr2-PTBYb.dat
+dnu_SYRTESrB-PTBYb.dat
+! dnu_PTBYb-NPLYb.dat
+! dnu_PTBSr-NPLSr.dat
+! dnu_SYRTESr2-NPLSr.dat
+! dnu_SYRTESrB-NPLSr.dat
+! dnu_SYRTESrB-SYRTESr2.dat
