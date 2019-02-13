@@ -174,7 +174,7 @@ int main() {
             << " -> " << fday * 24 * 60 * 60 << " s.\n";
   std::cout << "With: tau_0 = tau_avg = " << tau_avg << "s.\n";
   std::cout << "There are a total of: " << N_tot_pairs << " clock pairs. "
-            << " Only running analysis for N>" << min_N_pairs << "\n";
+            << " Only running analysis for N>=" << min_N_pairs << "\n";
   std::cout << "Searching between tau_int = " << teff_min << "->" << teff_max
             << "s, in: " << nteff << " steps.\n";
   if (profile == TDProfile::Gaussian)
@@ -353,9 +353,9 @@ void outputConstraints(const std::vector<double> &jeff_grid, int tau_avg,
                        const std::string &olabel) {
   // Define output grids for limits.
   //(hard-coded output grids!)
-  int odim_T = 128;
-  double oT_min = 0.5; // hours
-  double oT_max = 50.; // hours
+  int odim_T = 512;
+  double oT_min = 0.5;  // hours
+  double oT_max = 500.; // hours
   std::vector<double> T_grid;
   defineDoubleLogGrid(T_grid, oT_min, oT_max, odim_T);
   int odim_tint = 2048;
