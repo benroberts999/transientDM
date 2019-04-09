@@ -6,14 +6,17 @@ The relevant executable is called _transientDM_
 Program reads input parameters from a text file: _transientDM.in_.
 Another text file (by default called: _clocklist.in_) contains a list of
 data files that will be read in by the program.
+  * data files are assumed to be in format 'PREFIX_CLOCK1-CLOCK2.SUFFIX'
+  * prefix + suffix are input options
 
 Another program, _combinedX_ (reads input from _combinedX.in_) takes in a bunch of given data files (outputs of _transientDM_), and forms the resulting constraints [on delta(alpha)(tau_int), Lambda(T), and Lambda(d)]
 
-**Note:** you must first create a directory called _/obj/_ (the compiled, but un-linked) programs go here - the reason is that then only parts of the programs that actually change need to be re-compiles. Technically, these files are not needed after compilation, so feel free to delete them.
+**Note:** you must first create a directory called _/obj/_ (the compiled, but un-linked) programs go here - the reason is that then only parts of the programs that actually change need to be re-compiles.
+Technically, these files are not needed after compilation, so feel free to delete them.
 
 
 ## Input options description
-Each relevent option is explained inside the _transientDM.in_. Here is a basic list of what you can specify:
+Each relevant option is explained inside the _transientDM.in_. Here is a basic list of what you can specify:
   * For which time period to run the analysis
   * The 'averaging time' (in seconds) -- default is 60s, will average data into 60s chunks before the analysis. By default, it will throw away any data that is not perfectly continuous over this averaging period, but you can specify how many missing/skipped points are acceptable (0 by default). *See note (1)*
   * Which tau_int's (interaction/transient duration) to look for explicitly. Minimum must be >= averaging time.
@@ -51,34 +54,56 @@ int main() {
   // Opens the file "clocklist.in" (which contains paths to data files)
   // Reads the data file names/locations into list: filenames
   std::vector<std::string> filenames;
-  DataIO::getFileNames(filenames,"/path/to/clocklist.in");
+  DataIO::getFileNames(filenames, "/path/to/clocklist.in");
 
   // Generate "ClockNetwork" object:
-  int tau_avg = 60;    //average the data into 60s chunks
-  int max_bad_avg = 0; //don't allow any missing data points
-  ClockNetwork net(filenames,tau_avg,max_bad_avg);
+  int tau_avg = 60;    // average the data into 60s chunks
+  int max_bad_avg = 0; // don't allow any missing data points
+  ClockNetwork net(filenames, tau_avg, max_bad_avg);
 
   // Generate the signal template (template is signal, with deltaAlpha=1)
-  std::vector<std::vector<double> > s;  //array to hold signal
-  int j_int = tau_int/tau_avg;          //Interaction duration (in epochs)
-  int nJW = 1;                          //Take 'window' to be 1*tau_int
-  net.genSignalTemplate(s,nJW,j_int);
+  std::vector<std::vector<double>> s; // array to hold signal
+  int j_int = tau_int / tau_avg;      // Interaction duration (in epochs)
+  int nJW = 1;                        // Take 'window' to be 1*tau_int
+  net.genSignalTemplate(s, nJW, j_int);
 
-  int j0 = t0/tau_avg;    //Time to check for a DM interaction
+  // Time to check for a DM interaction:
+  int j0 = t0 / tau_avg;
 
-  //Form the sub-network of independent clock-pairs:
+  // Form the sub-network of independent clock-pairs:
   std::vector<int> indep_pairs;
-  net.formIndependentSubnet(indep_pairs,j0,Jw);
+  net.formIndependentSubnet(indep_pairs, j0, Jw);
 
-  //Calculate the 'dHs' and 'sHs' values (see paper for definition)
-  auto xHs = net.calculate_dHs_sHs(indep_pairs,s,j0);
+  // Calculate the 'dHs' and 'sHs' values (see paper for definition)
+  auto xHs = net.calculate_dHs_sHs(indep_pairs, s, j0);
 
-  //Now, we can get the best-fit \delta\alpha, R, and \Delta\alpha:
-  double da_bf = fabs(xHs.dHs)/xHs.sHs;          //best-fit amplitude
-  double Delta = 1./sqrt(xHs.sHs);               //Error term
-  double R     = fabs(xHs.dHs)/sqrt(2*xHs.sHs);  //SNR ratio
+  // Now, we can get the best-fit \delta\alpha, R, and \Delta\alpha:
+  double da_bf = fabs(xHs.dHs) / xHs.sHs;       // best-fit amplitude
+  double Delta = 1. / sqrt(xHs.sHs);            // Error term
+  double R = fabs(xHs.dHs) / sqrt(2 * xHs.sHs); // SNR ratio
 
-  //Normally, will be looped over all relevant values of tau_int.
-  //For each tau_int, loops over all values of t0 (times), maximises R and da
+  // Normally, will be looped over all relevant values of tau_int.
+  // For each tau_int, loops over all values of t0 (times), maximises R and da
 }
 ```
+
+
+## Note:
+
+This code uses two assumptions:
+  1) All clocks affected by TD simultaneously (good for tau >~ 15s)
+  2) All noise in white Gaussian frequency noise
+
+To correct (1), need to update [in ClockNetwork.cpp]:
+  * Need to store positions of all clocks (this is done, but not used)
+  * genSignalTemplate() routine needs to be updated to take into account
+  the position of each clock, and the incident speed/direction of TD
+  (see my PRD 2016 paper for formulas)
+
+To correct (2), need to update:
+ * Need to calculate (or read in) covariance matrix + inverse
+ * Need to update calculate_dHs_sHs() function to use matrix
+
+
+Also: it is hard-coded to use the Sr/Yb+/Hg clocks of PTB/SYRTE/NPL.
+To use other clocks, must add their info to 'ClockInfo.h' header

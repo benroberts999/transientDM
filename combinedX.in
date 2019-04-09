@@ -1,6 +1,6 @@
 ! comment lines begin with '!'
 ! output label for file:
-0213_2017-2018_AllowSingle
+test
 ! T output list (for function of tau_int):
 ! (nb: will add the largest T too)
 0.9 1 10 12 40

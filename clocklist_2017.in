@@ -11,8 +11,8 @@ dnu_SYRTEHg-NPLYb.dat
 dnu_SYRTEHg-NPLSr.dat
 dnu_SYRTESr2-PTBYb.dat
 dnu_SYRTESrB-PTBYb.dat
-! dnu_PTBYb-NPLYb.dat
-! dnu_PTBSr-NPLSr.dat
-! dnu_SYRTESr2-NPLSr.dat
-! dnu_SYRTESrB-NPLSr.dat
-! dnu_SYRTESrB-SYRTESr2.dat
+dnu_PTBYb-NPLYb.dat
+dnu_PTBSr-NPLSr.dat
+dnu_SYRTESr2-NPLSr.dat
+dnu_SYRTESrB-NPLSr.dat
+dnu_SYRTESrB-SYRTESr2.dat

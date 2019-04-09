@@ -1,14 +1,14 @@
-./clocklist_all.in        ! File that contains list of clock data files
+./clocklist_2017.in        ! File that contains list of clock data files
 dnu_ .dat                 ! data file prefix, suffix *
 1                         ! Skip bad bits? 1=yes. 0=no. **
-000. 600.                 ! init/fin day to search (since MJD:57900)
+000. 040.                 ! init/fin day to search (since MJD:57900)
 60  0                     ! tau_avg, allowable skipped-points (in avg)
 60 10000 512              ! tau_int: min, max, N_pts
-1 0 0                     ! Min # pairs; Force: PTB:Yb/Sr? SYR:Hg/NPL:Yb? 1=y
+2 0 0                     ! Min # pairs; Force: PTB:Yb/Sr? SYR:Hg/NPL:Yb? 1=y
 0                         ! Profile. 0=Gaussian. 1=flat
 1.                        ! n_sig [1=68%CL, 1.645=90%, 2=95.5%]
 0                         ! What? 0=limit; 1=R_max; 2=both; 3=Rthresh
-17-18-100                    ! Label for output file (can be 'na' for none)
+test                      ! Label for output file (can be 'na' for none)
 0     1e3    19.   0      ! Inject fake event. For testing. See below***:
 !!!!!!!!!!!!!!!!!!!!!!!!!!!
 

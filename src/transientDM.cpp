@@ -116,16 +116,17 @@ int main() {
                    max_bad_avg);
   std::cout << "Time to read files: " << timer.lap_reading_str() << "\n\n";
 
-  bool just_write_data_out = false; // hard-coded..used v. rarey
-  if (just_write_data_out) {
-    net.writeOutClockData();
-    return 0;
-  }
-
   int N_tot_pairs = net.get_NtotPairs();
   if (N_tot_pairs < min_N_pairs) {
     std::cerr << "No clocks? Check data file paths\n";
     return 1;
+  }
+
+  // set this to true to just output data for plotting (including averaging)
+  bool just_write_data_out = false; // hard-coded..used v. rarey
+  if (just_write_data_out) {
+    net.writeOutClockData(olabel);
+    return 0;
   }
 
   // Here: If necisary, inject a fake event (for testing!)
@@ -205,9 +206,7 @@ int main() {
 //******************************************************************************
 void defineDoubleLogGrid(std::vector<double> &grid, double min, double max,
                          int N)
-/*
-Forms a logarithmically-spaced grid of doubles, between [min,max] in N steps.
-*/
+// Forms a logarithmically-spaced grid of doubles, between [min,max] in N steps.
 {
   grid.clear();
   grid.reserve(N);
@@ -224,9 +223,7 @@ void dmSearch_tau_int(const ClockNetwork &net, int teff_min, int teff_max,
                       double iday, double fday, int min_N_pairs,
                       bool force_PTB_SrYb, bool force_SyrHbNplYb,
                       std::string olabel, WhichOutput whichoutput)
-/*
-Main routine. Maximises \delta\alpha_0 to find limit, and/or R for search.
-*/
+// Main routine. Maximises \delta\alpha_0 to find limit, and/or R for search.
 {
 
   bool outputLimit = true;
@@ -264,7 +261,6 @@ Main routine. Maximises \delta\alpha_0 to find limit, and/or R for search.
   double jeff_max = teff_max / tau_avg;
   // Define the tau_eff grid (exponentially spaced grid):
   std::vector<double> jeff_grid;
-  // defineIntegerLogGrid(jeff_grid, jeff_min, jeff_max, nteff);
   defineDoubleLogGrid(jeff_grid, jeff_min, jeff_max, nteff);
 
   // Arrays to store results:
@@ -286,6 +282,7 @@ Main routine. Maximises \delta\alpha_0 to find limit, and/or R for search.
     int Jw = (int)s[0].size(); // store window
 
     // Loop over j0 (t0): note: jbeg is _beginning_ of Jw window!
+    // j_step is how much to step window along, in epochs! (usually, 1)
     long j_step = 1;     // or tau_eff? tau_eff/2? Makes little diff!
     long num_j_used = 0; // count
     for (long jbeg = j_init; jbeg <= j_fin; jbeg += j_step) {
@@ -306,9 +303,7 @@ Main routine. Maximises \delta\alpha_0 to find limit, and/or R for search.
       double da_bf = fabs(xHs.dHs) / xHs.sHs;
       double Delta = 1. / sqrt(xHs.sHs);
       double R = fabs(xHs.dHs) / sqrt(2 * xHs.sHs);
-      if (da_bf + Delta > da_max[it] + Del_da[it])
-      // if(da_bf>da_max[it])
-      {
+      if (da_bf + Delta > da_max[it] + Del_da[it]) {
         da_max[it] = da_bf;
         Del_da[it] = Delta; // 1./sqrt(xHs.sHs);
       }
@@ -323,10 +318,11 @@ Main routine. Maximises \delta\alpha_0 to find limit, and/or R for search.
 
   } // tau_eff
 
+  // Output a summary or results to screen (just for convenience)
   // for tau_eff = 60,120,1020,10020
   // => j_eff = 1,2,17,167
   std::cout << "Summary of results:\n";
-  std::cout << "tau_eff  da_max    Da         Rmax   Tobs\n";
+  std::cout << "tau_eff  da_max    Delta      Rmax   Tobs\n";
   for (size_t i = 0; i < jeff_grid.size() - 1; i++) {
     auto jf = jeff_grid[i];
     auto tf = jf * tau_avg;
@@ -425,11 +421,9 @@ void outputR_teff(const std::vector<double> &jeff_grid, int tau_avg,
                   const std::vector<double> &da_max,
                   const std::vector<double> &Del_da,
                   const std::vector<double> &T_obs, const std::string &olabel)
-/*
-Writes out results (R_max, da_max etc.)
-as a function of tau_eff [not tau_int].
-Each point will have different T_obs! (also outputted)
-*/
+// Writes out results (R_max, da_max etc.)
+// as a function of tau_eff [not tau_int].
+// Each point will have different T_obs! (also outputted)
 {
   // Form:  tau_eff | R da Del_da T_obs
   std::string ofname = "R_teff" + olabel + ".txt";
@@ -451,13 +445,11 @@ void calculateThreshold(ClockNetwork &net, int teff_min, int teff_max,
                         int nteff, TDProfile profile, int nJeffW, double iday,
                         double fday, int min_N_pairs, bool force_PTB_SrYb,
                         bool force_SyrHbNplYb, std::string olabel)
-/*
-Calculates R (SNR) threshold.
-Simulates data, num_trials times.
-Takes the average of the num_avg worst R's
-num_trials = num_avg*100
-==> roughly, gives 99% C.L
-*/
+// Calculates R (SNR) threshold.
+// Simulates data, num_trials times.
+// Takes the average of the num_avg worst R's
+// num_trials = num_avg*100
+// ==> roughly, gives 99% C.L
 {
   int tau_avg = net.get_tau0();
   int max_bad_inJw = 0; // just leave as zero?
@@ -499,7 +491,6 @@ num_trials = num_avg*100
       int Jw = (int)s[0].size(); // store window size
       // Loop over j0 (t0): note: jbeg is _beginning_ of Jw window!
       long j_step = 1; // or tau_eff? tau_eff/2? Makes little diff!
-      // long num_j_used = 0; //count
       for (long jbeg = j_init; jbeg <= j_fin; jbeg += j_step) {
         // Form the independent sub-network:
         std::vector<int> indep_pairs;

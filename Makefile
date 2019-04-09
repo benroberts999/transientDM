@@ -4,14 +4,19 @@ ID = ./src
 OD = ./obj
 XD =.
 
-CXX=g++ #clang++
+CXX=g++
+#CXX=clang++
 
-OMP=-fopenmp #-fopenmp=libiomp5 ##needed for clang++
+OMP=-fopenmp
 
 OPT=-O3
-WARN=-Wall -Wextra -Wpedantic -Wdouble-promotion #-Wconversion
+WARN=-Wall -Wextra -Wpedantic -Wdouble-promotion -Wconversion
 
-CXXFLAGS=-I$(ID) -std=c++11 $(WARN) $(OMP) $(OPT)
+ifeq ($(CXX),clang++)
+  WARN += -Wno-sign-conversion
+endif
+
+CXXFLAGS=-std=c++11 $(WARN) $(OMP) $(OPT)
 
 detected_OS := $(shell uname -s) #will return the Operating system name
 $(info )

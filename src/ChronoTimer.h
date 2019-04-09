@@ -23,7 +23,6 @@ Usage:
   reading_str() and lap_reading_str() -- As above, but outputs as
   formatted string, in units of ms,s,mins, or hours
   (e.g., "1.56 s" or "2.10 hours")
-
 */
 
 class ChronoTimer {

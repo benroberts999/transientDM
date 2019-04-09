@@ -7,15 +7,13 @@ static double sqrtPI = sqrt(M_PI);
 
 //******************************************************************************
 double s_Gaussian(double tau0, double tau_int, double t0, double tj, double Kab)
-/*
-\delta\omega/\omega = \varphi(t_j)
-\varphi(t_j) = \deltaX * s(t_j)
-s(t_j) = 0.5 * K_ab * sqrt(pi) * (tau_int/tau_0)
-        * [erf([t0-tj+tau0]/tau_int) - erf([t0-tj]/tau_int)]
-The default value of K=1
-This is because, often, template is _exactly_ the same for each clock,
-only K changes. So only need to call this function for _one_ clock!
-*/
+// \delta\omega/\omega = \varphi(t_j)
+// \varphi(t_j) = \deltaX * s(t_j)
+// s(t_j) = 0.5 * K_ab * sqrt(pi) * (tau_int/tau_0)
+//         * [erf([t0-tj+tau0]/tau_int) - erf([t0-tj]/tau_int)]
+// The default value of K=1
+// This is because, often, template is _exactly_ the same for each clock,
+// only K changes. So only need to call this function for _one_ clock!
 {
   if (Kab == 0)
     return 0;
@@ -27,9 +25,7 @@ only K changes. So only need to call this function for _one_ clock!
 
 //***************************************************************************
 double s_topHat(double, double tau_int, double t0, double tj, double Kab)
-/*
-As above, but for top-hat (flat) profile
-*/
+// As above, but for top-hat (flat/rectangular) profile
 {
   if (Kab == 0)
     return 0;
@@ -41,17 +37,14 @@ As above, but for top-hat (flat) profile
 
 //******************************************************************************
 double fastErf(double x)
-/*
-170620.
-Up to 10x faster!
-Uses a series expansion about 0 for values of |x|<0.35.
-Two regions for the series expansion, so it doesn't have to call large powers
-in the case that x is very small.
-For |x|>0.35, reverts to regular cmath erf function.
-Accurate to better than 1e-5
-See also:Abramowitz and Stegun (equations 7.1.25–28)
-  https://en.wikipedia.org/wiki/Error_function
-*/
+// Up to 10x faster!
+// Uses a series expansion about 0 for values of |x|<0.35.
+// Two regions for the series expansion, so it doesn't have to call large powers
+// in the case that x is very small.
+// For |x|>0.35, reverts to regular cmath erf function.
+// Accurate to better than 1e-5
+// See also:Abramowitz and Stegun (equations 7.1.25–28)
+//   https://en.wikipedia.org/wiki/Error_function
 {
   if (x > 3.4)
     return 1.;

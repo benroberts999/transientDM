@@ -12,13 +12,11 @@ namespace DataIO {
 //******************************************************************************
 inline void getFileNames(std::vector<std::string> &fnames,
                          const std::string &input_fn)
-/*
-Opens an input text files (called: input_fn)
-Reads each line into an array.
-First line of text-file is an absolute (or relative) path name.
-Each subsequent line contains just the file names.
-Any line that begines with '!' or '#' is ignored
-*/
+// Opens an input text files (called: input_fn)
+// Reads each line into an array.
+// First line of text-file is an absolute (or relative) path name.
+// Each subsequent line contains just the file names.
+// Any line that begines with '!' or '#' is ignored
 {
   std::ifstream ifs;
   ifs.open(input_fn);
@@ -42,11 +40,10 @@ Any line that begines with '!' or '#' is ignored
 template <typename T, typename U>
 int read_text_XY(const std::string &in_fname, std::vector<T> &x,
                  std::vector<U> &y, bool append = false)
-/*
-return 0 = all good.
-return 1 = file is empty or doesn't exist (or can't be opened)
-return 2 = something worse happened.. bug in program, or data file is messed up
-*/
+// return 0 = all good.
+// return 1 = file is empty or doesn't exist (or can't be opened)
+// return 2 = something worse happened.. bug in program, or data file is messed
+// up
 {
   std::ifstream ifs;
   ifs.open(in_fname.c_str());

@@ -41,10 +41,8 @@ void ChronoTimer::reset() {
 
 //******************************************************************************
 double ChronoTimer::lap_reading_ms()
-/*
-Returns value for current riming run (lap)
-Returns double (milliseconds)
-*/
+// Returns value for current riming run (lap)
+// Returns double (milliseconds)
 {
 
   if (!running)
@@ -62,10 +60,8 @@ Returns double (milliseconds)
 
 //******************************************************************************
 double ChronoTimer::reading_ms()
-/*
-Returns total value for timnig run
-Returns double (milliseconds)
-*/
+// Returns total value for timnig run
+// Returns double (milliseconds)
 {
   return lap_reading_ms() + total_time_ms;
 }
@@ -79,10 +75,8 @@ std::string ChronoTimer::lap_reading_str() {
 
 //******************************************************************************
 std::string ChronoTimer::convertHR(double t)
-/*
-Convers double (in ms) into formmated 2 d.p. string in units of either
-ms, s, mins, or hours, depending on size.
-*/
+// Convers double (in ms) into formmated 2 d.p. string in units of either
+// ms, s, mins, or hours, depending on size.
 {
   double ot;
 

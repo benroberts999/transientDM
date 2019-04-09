@@ -3,17 +3,34 @@
 #include <vector>
 
 namespace CNconsts {
-const int MJD_DAY_ZERO = 57900;
-const int SECS_IN_DAY = 24 * 60 * 60;
+static const int MJD_DAY_ZERO = 57900;
+static const int SECS_IN_DAY = 24 * 60 * 60;
 } // namespace CNconsts
 
 enum class ClockAtom { Sr, Hg, YbII };
 enum class TDProfile { Gaussian, Flat };
 enum class FillGaps { yes, no };
 
+/*
+This uses two assumptions:
+  1) All clocks affected by TD simultaniously (good for tau >~ 15s)
+  2) All noise in white Gaussian frequency noise
+
+To correct (1), need to update:
+  * Need to store positions of all clocks (this is done, but not used)
+  * genSignalTemplate() routine needs to be updated to take into account
+  the position of each clock, and the incident speed/direction of TD
+  (see my PRD 2016 paper for formulas)
+
+To correct (2), need to update:
+ * Need to calculate (or read in) covariance matrix + inverse
+ * Need to update calculate_dHs_sHs() function to use matrix
+
+*/
+
 //******************************************************************************
 struct Result_xHs {
-
+  // simple struct to store dHs and sHs values
   Result_xHs(double dHs, double sHs) : dHs(dHs), sHs(sHs){};
 
   double dHs;
@@ -50,26 +67,26 @@ public:
                                const std::vector<std::vector<double>> &s,
                                long beg_epoch) const;
 
-  void writeOutClockData();
+  void writeOutClockData(std::string label = "");
 
-private:            // data
-  const int _tau_0; // const means cannot be changed after initialised
+private: // data
+  const int m_tau_0;
 
-  std::vector<std::vector<double>> _delta_omega;
-  std::vector<std::vector<bool>> _data_ok;
-  std::vector<long> _initial_time; // ever used?
-  std::vector<long> _initial_epoch;
-  std::vector<double> _mean;
-  std::vector<double> _sigma0;
+  std::vector<std::vector<double>> m_delta_omega;
+  std::vector<std::vector<bool>> m_data_ok;
+  std::vector<long> m_initial_time; // ever used?
+  std::vector<long> m_initial_epoch;
+  std::vector<double> m_mean;
+  std::vector<double> m_sigma0;
 
-  std::vector<int> _ranked_index_list;
+  std::vector<int> m_ranked_index_list;
 
-  std::vector<std::string> _clock_name_A;
-  std::vector<std::string> _clock_name_B;
+  std::vector<std::string> m_clock_name_A;
+  std::vector<std::string> m_clock_name_B;
 
-  std::vector<double> _K_A;
-  std::vector<double> _K_B;
-  std::vector<double> _K_AB;
+  std::vector<double> m_K_A;
+  std::vector<double> m_K_B;
+  std::vector<double> m_K_AB;
 
 private: // methods
   int readInDataFile(const std::string &in_fname, int max_bad,
