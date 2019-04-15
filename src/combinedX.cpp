@@ -37,7 +37,7 @@ bool readEachFile(std::string infn, std::vector<double> &T_list,
         if (!ssin.good())
           break;
         if (tmp_dX == 0)
-          tmp_dX = 1. / 0.; // XXX XXX XXX ??
+          tmp_dX = 1. / 0.; // OK? ??
         dX_tint.push_back(tmp_dX);
       }
       if (dX_tint.size() != T_list.size()) {

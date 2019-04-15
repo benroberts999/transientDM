@@ -11,8 +11,8 @@ data files that will be read in by the program.
 
 Another program, _combinedX_ (reads input from _combinedX.in_) takes in a bunch of given data files (outputs of _transientDM_), and forms the resulting constraints [on delta(alpha)(tau_int), Lambda(T), and Lambda(d)]
 
-**Note:** you must first create a directory called _/obj/_ (the compiled, but un-linked) programs go here - the reason is that then only parts of the programs that actually change need to be re-compiles.
-Technically, these files are not needed after compilation, so feel free to delete them.
+**Note:** you must first create a directory called _/obj/_ (the compiled, but un-linked) programs go here - the reason is that then only parts of the programs that actually change need to be re-compiled.
+These files are not needed after compilation, so feel free to delete them (though they save time if you need too recompile).
 
 
 ## Input options description
@@ -25,6 +25,7 @@ Each relevant option is explained inside the _transientDM.in_. Here is a basic l
   * n_sig sets the confidence level, limit = |max| + n_sig * error
   (n=1 => 68% CL, n=1.645 => 90% etc.)
   * Option to inject a fake event (either into real data, or randomly generated noise). This gives a good test of the method.
+  * It uses the data file filename to work out which clock it is for - this is probably not the best long-term solution, but can easily be updated
 
 
 ### notes

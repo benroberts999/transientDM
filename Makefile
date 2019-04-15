@@ -70,8 +70,7 @@ $(ID)/ChronoTimer.h
 # Link + build all final programs
 
 $(XD)/transientDM: $(OD)/transientDM.o $(OD)/ClockNetwork.o \
-$(OD)/DMs_signalTemplates.o $(OD)/ChronoTimer.o \
-$(OD)/RNG_randomNumberGenerators.o
+$(OD)/DMs_signalTemplates.o $(OD)/RNG_randomNumberGenerators.o
 	$(LINK)
 
 $(XD)/combinedX: $(OD)/combinedX.o
