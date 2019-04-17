@@ -125,12 +125,12 @@ int main(void) {
   }
 
   // return 1;
-  for (size_t i = 0; i < file_list.size(); i++) {
+  for (std::size_t i = 0; i < file_list.size(); i++) {
     std::cout << file_list[i] << "\n";
   }
 
   // Loop through each file, constuct limit matrix:
-  for (size_t i = 0; i < file_list.size(); i++) {
+  for (std::size_t i = 0; i < file_list.size(); i++) {
     std::string infn = file_list[i];
     std::vector<double> T_list_i;
     std::vector<double> tint_list_i;
@@ -141,11 +141,11 @@ int main(void) {
     double tau_min = tint_min[i];
     double tau_max = tint_max[i];
     // std::cout<<tau_max<<"\n";
-    for (size_t j = 0; j < dX_i.size(); j++) {
+    for (std::size_t j = 0; j < dX_i.size(); j++) {
       double tint = tint_list_i[j];
       if (tint >= tau_min && tint <= tau_max)
         continue;
-      for (size_t k = 0; k < dX_i[j].size(); k++) {
+      for (std::size_t k = 0; k < dX_i[j].size(); k++) {
         dX_i[j][k] = 1. / 0.;
       }
     }
@@ -164,10 +164,10 @@ int main(void) {
           T_list_i.back() != T_list.back())
         std::cout << "\nFAIL:81 - " << infn << "\n";
       // if better, replace [but only if applicable tau_int region!]
-      for (size_t j = 0; j < dX.size(); j++) {
+      for (std::size_t j = 0; j < dX.size(); j++) {
         // double tint = tint_list[j];
         // if(tint < tau_min || tint > tau_max) continue;
-        for (size_t k = 0; k < dX[0].size(); k++) {
+        for (std::size_t k = 0; k < dX[0].size(); k++) {
           if (dX_i[j][k] > 1.)
             continue;
           if (dX_i[j][k] < dX[j][k] || dX[j][k] > 1.) {
@@ -183,7 +183,7 @@ int main(void) {
   for (int i = (int)T_list.size() - 1; i >= 0; --i) {
     Tmax = T_list[i];
     bool found = false;
-    for (size_t j = 0; j < tint_list.size(); j++) {
+    for (std::size_t j = 0; j < tint_list.size(); j++) {
       if (dX[j][i] < 1) {
         found = true;
         break;
@@ -201,10 +201,10 @@ int main(void) {
   // For each input T, make plot as fn of tau_int
   // Find T index: note: T_calc < T_target
   std::vector<int> iT_list;
-  for (size_t i = 0; i < T_out.size(); i++) {
+  for (std::size_t i = 0; i < T_out.size(); i++) {
     double T_targ = T_out[i];
     int iT = 0;
-    for (size_t i2 = 0; i2 < T_list.size(); i2++) {
+    for (std::size_t i2 = 0; i2 < T_list.size(); i2++) {
       if (T_list[i2] >= T_targ - 0.01) {
         iT = int(i2);
         break;
@@ -223,7 +223,7 @@ int main(void) {
   of2.precision(2);
   of << "tau_int\\T ";
   of2 << "tau_int\\T ";
-  for (size_t i = 0; i < iT_list.size(); i++) {
+  for (std::size_t i = 0; i < iT_list.size(); i++) {
     of << T_list[iT_list[i]] << " ";
     of2 << T_list[iT_list[i]] << " ";
   }
@@ -231,10 +231,10 @@ int main(void) {
   of2 << "\n";
   of.precision(4);
   of2.precision(4);
-  for (size_t j = 0; j < tint_list.size(); j++) {
+  for (std::size_t j = 0; j < tint_list.size(); j++) {
     of << tint_list[j] << " ";
     of2 << tint_list[j] << " ";
-    for (size_t i = 0; i < iT_list.size(); i++) {
+    for (std::size_t i = 0; i < iT_list.size(); i++) {
       int iT = iT_list[i];
       of << dX[j][iT] << " ";
       double Ts = T_list[iT] * hr_s; // convert to seconds:
@@ -250,10 +250,10 @@ int main(void) {
   // For each input tau_int, make plot as fn of T
   // For this, don't bother with dX, just Lambda
   std::vector<int> itint_list;
-  for (size_t i = 0; i < tint_out.size(); i++) {
+  for (std::size_t i = 0; i < tint_out.size(); i++) {
     double tint_targ = tint_out[i];
     int itint = 0;
-    for (size_t i2 = 0; i2 < tint_list.size(); i2++) {
+    for (std::size_t i2 = 0; i2 < tint_list.size(); i2++) {
       if (tint_list[i2] >= tint_targ - 0.1) {
         itint = int(i2);
         break;
@@ -266,13 +266,13 @@ int main(void) {
   of.open(of2name);
   of.precision(2);
   of << "T\\tau_int ";
-  for (size_t i = 0; i < itint_list.size(); i++)
+  for (std::size_t i = 0; i < itint_list.size(); i++)
     of << tint_list[itint_list[i]] << " ";
   of << "\n";
   of.precision(4);
-  for (size_t j = 0; j < T_list.size(); j++) {
+  for (std::size_t j = 0; j < T_list.size(); j++) {
     of << T_list[j] << " ";
-    for (size_t i = 0; i < itint_list.size(); i++) {
+    for (std::size_t i = 0; i < itint_list.size(); i++) {
       int itint = itint_list[i];
       double Ts = T_list[j] * hr_s; // convert to seconds:
       double tint = tint_list[itint];

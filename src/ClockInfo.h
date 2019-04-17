@@ -13,7 +13,7 @@ const std::vector<std::string> CLOCKS = {
     "NPLSr",    "NPLYb",    "PTBSr",      "PTBYb",     "SYRTEHg",
     "SYRTESr2", "SYRTESrB", "SYRTEFO2Cs", "SYRTEFO2Rb"};
 
-// Absolute frequencies, in Hz
+// Absolute frequencies, in Hz [don't actualy use these]
 const double NU0_SR = 429228004229873.0;  // Sr
 const double NU0_YB = 642121496772645.0;  // Yb
 const double NU0_HG = 1128575290808154.4; // Hg
@@ -45,7 +45,7 @@ const std::vector<std::vector<double>> LABPOS = {
     SYRTE_POS, SYRTE_POS, SYRTE_POS, SYRTE_POS};
 
 inline int GET_CLOCK_INDEX(std::string in_clock) {
-  for (size_t i = 0; i < CLOCKS.size(); i++)
+  for (std::size_t i = 0; i < CLOCKS.size(); i++)
     if (in_clock == CLOCKS[i])
       return (int)i;
   std::cout << "\nFAILURE 71 in clockInfo: cant find " << in_clock << "\n\n";

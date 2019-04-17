@@ -272,7 +272,7 @@ void dmSearch_tau_int(const ClockNetwork &net, int teff_min, int teff_max,
   int N_tot_pairs = net.get_NtotPairs();
 
 #pragma omp parallel for
-  for (size_t it = 0; it < jeff_grid.size(); it++) {
+  for (std::size_t it = 0; it < jeff_grid.size(); it++) {
     double j_eff = jeff_grid[it];
 
     // signal template:
@@ -323,7 +323,7 @@ void dmSearch_tau_int(const ClockNetwork &net, int teff_min, int teff_max,
   // => j_eff = 1,2,17,167
   std::cout << "Summary of results:\n";
   std::cout << "tau_eff  da_max    Delta      Rmax   Tobs\n";
-  for (size_t i = 0; i < jeff_grid.size() - 1; i++) {
+  for (std::size_t i = 0; i < jeff_grid.size() - 1; i++) {
     auto jf = jeff_grid[i];
     auto tf = jf * tau_avg;
     auto tfp = jeff_grid[i + 1] * tau_avg;
@@ -371,15 +371,15 @@ void outputConstraints(const std::vector<double> &jeff_grid, int tau_avg,
   // Sort the limits from the tau_eff grid into the tau_int grid
   // Taking observation time into account for T
   // Note: tau_int << T (otherwise, not transient! take 2x?)
-  for (size_t iT = 0; iT < T_grid.size(); iT++) {
+  for (std::size_t iT = 0; iT < T_grid.size(); iT++) {
     double T = T_grid[iT];
-    for (size_t iteff = 0; iteff < jeff_grid.size(); iteff++) {
+    for (std::size_t iteff = 0; iteff < jeff_grid.size(); iteff++) {
       double t_eff = jeff_grid[iteff] * tau_avg;
       double Tobs = T_obs[iteff];
       if (T > Tobs * pois_fac)
         continue; // could probs beak, but meh
       double da = da_max[iteff] + n_sig * Del_da[iteff];
-      for (size_t itint = 0; itint < tint_grid.size(); itint++) {
+      for (std::size_t itint = 0; itint < tint_grid.size(); itint++) {
         double t_int = tint_grid[itint];
         if (t_int < t_eff)
           continue;
@@ -433,7 +433,7 @@ void outputR_teff(const std::vector<double> &jeff_grid, int tau_avg,
   ofs << "tau_eff R damax Delda Tobs\n";
   ofs.precision(4);
 
-  for (size_t i = 0; i < jeff_grid.size(); i++) {
+  for (std::size_t i = 0; i < jeff_grid.size(); i++) {
     ofs << jeff_grid[i] * tau_avg << " " << R_max[i] << " " << da_max[i] << " "
         << Del_da[i] << " " << T_obs[i] << "\n";
   }
@@ -482,7 +482,7 @@ void calculateThreshold(ClockNetwork &net, int teff_min, int teff_max,
     net.replaceWithRandomNoise(FillGaps::no);
 
 #pragma omp parallel for
-    for (size_t it = 0; it < jeff_grid.size(); it++) {
+    for (std::size_t it = 0; it < jeff_grid.size(); it++) {
       double j_eff = jeff_grid[it];
       // signal template:
       std::vector<std::vector<double>> s;
@@ -554,7 +554,7 @@ void calculateThreshold(ClockNetwork &net, int teff_min, int teff_max,
       << "  worst(largest) R_max's [for each given tau], out of a total of: \n"
       << "  " << num_trials << " trails (roghly, 99 percentile).\n";
   std::cout << "|tau_eff    R_mean    R_thresh|\n";
-  for (size_t i = 0; i < jeff_grid.size(); i++) {
+  for (std::size_t i = 0; i < jeff_grid.size(); i++) {
     auto jf = jeff_grid[i];
     auto tf = jf * tau_avg;
     auto tfp = jeff_grid[i + 1] * tau_avg;
@@ -571,7 +571,7 @@ void calculateThreshold(ClockNetwork &net, int teff_min, int teff_max,
   std::ofstream ofs(ofname);
   ofs << "tau_eff R_mean R_thresh\n";
   ofs.precision(4);
-  for (size_t i = 0; i < jeff_grid.size(); i++) {
+  for (std::size_t i = 0; i < jeff_grid.size(); i++) {
     ofs << jeff_grid[i] * tau_avg << " " << R_avg[i] << " " << R_max[i] << " "
         << "\n";
   }

@@ -144,7 +144,7 @@ return 2 = something worse happened.. bug in program, or data file is messed up
   }
 
   ofs << std::setprecision(10);
-  for (size_t i = 0; i < x.size(); i++)
+  for (std::size_t i = 0; i < x.size(); i++)
     ofs << x[i] << " " << y[i] << "\n";
 
   return 0;

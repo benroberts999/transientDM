@@ -18,7 +18,7 @@ ClockNetwork::ClockNetwork(const std::vector<std::string> &filenames,
 {
 
   // Read in and average the raw data.
-  for (size_t i = 0; i < filenames.size(); i++) {
+  for (std::size_t i = 0; i < filenames.size(); i++) {
     std::cout << "Reading input data file: " << i + 1 << "/" << filenames.size()
               << "         \r" << std::flush;
     readInDataFile(filenames[i], max_bad, prefix, suffix, skip_bad_bits);
@@ -164,7 +164,7 @@ void ClockNetwork::writeOutClockData(std::string label) {
     x.reserve(N);
     y.reserve(N);
     auto j0 = m_initial_epoch[i];
-    for (size_t j = 0; j < N; j++) {
+    for (std::size_t j = 0; j < N; j++) {
       double day = double((j0 + j) * m_tau_0) / (24. * 60 * 60);
       if (!m_data_ok[i][j])
         continue;
@@ -261,7 +261,7 @@ void ClockNetwork::genSignalTemplate(std::vector<std::vector<double>> &s,
 
   // Write signal-template s
   s.resize(m_K_AB.size(), std::vector<double>(Jw));
-  for (size_t i = 0; i < m_K_AB.size(); i++) { // loop through clocks
+  for (std::size_t i = 0; i < m_K_AB.size(); i++) { // loop through clocks
     double Kabi = m_K_AB[i];
     for (int j = 0; j < Jw; j++)
       s[i][j] = Kabi * sonK[j];
@@ -292,7 +292,7 @@ int ClockNetwork::readInDataFile(const std::string &in_fname, int max_bad,
   // I want in units of seconds, since MJD_DAY_ZERO = 57900
   double t_offset = CNconsts::MJD_DAY_ZERO;
   double t_scale = CNconsts::SECS_IN_DAY;
-  for (size_t i = 0; i < times.size(); i++) {
+  for (std::size_t i = 0; i < times.size(); i++) {
     times[i] -= t_offset;
     times[i] *= t_scale;
   }
@@ -319,7 +319,7 @@ int ClockNetwork::readInDataFile(const std::string &in_fname, int max_bad,
   w_tmp.reserve(tot_time);
   ok_tmp.reserve(tot_time);
   {
-    size_t j = 0;
+    std::size_t j = 0;
     for (long i = 0; i < tot_time; i++) {
       long tf = (long)round(times[j]);
       long t = i_time + i;
@@ -425,11 +425,11 @@ void ClockNetwork::calculateSigma0() {
     std::cerr << "FAIL CN 237 - no mean?\n";
 
   m_sigma0.reserve(m_delta_omega.size());
-  for (size_t i = 0; i < m_delta_omega.size(); i++) {
+  for (std::size_t i = 0; i < m_delta_omega.size(); i++) {
     double x0 = m_mean[i];
     double var = 0.;
     long Npts = 0;
-    for (size_t j = 0; j < m_delta_omega[i].size(); j++) {
+    for (std::size_t j = 0; j < m_delta_omega[i].size(); j++) {
       if (!m_data_ok[i][j])
         continue;
       var += pow(m_delta_omega[i][j] - x0, 2);
@@ -483,20 +483,20 @@ void ClockNetwork::replaceWithRandomNoise(FillGaps fill_gapsQ)
 
   if (fill_gaps) {
 #pragma omp parallel for
-    for (size_t i = 0; i < m_delta_omega.size(); i++) {
+    for (std::size_t i = 0; i < m_delta_omega.size(); i++) {
       double x0 = m_mean[i];
       double sig = m_sigma0[i];
-      for (size_t j = 0; j < m_delta_omega[i].size(); j++) {
+      for (std::size_t j = 0; j < m_delta_omega[i].size(); j++) {
         m_data_ok[i][j] = true;
         m_delta_omega[i][j] = RNG::randGausVal(sig, x0);
       }
     }
   } else {
 #pragma omp parallel for
-    for (size_t i = 0; i < m_delta_omega.size(); i++) {
+    for (std::size_t i = 0; i < m_delta_omega.size(); i++) {
       double x0 = m_mean[i];
       double sig = m_sigma0[i];
-      for (size_t j = 0; j < m_delta_omega[i].size(); j++) {
+      for (std::size_t j = 0; j < m_delta_omega[i].size(); j++) {
         if (!m_data_ok[i][j])
           continue;
         m_delta_omega[i][j] = RNG::randGausVal(sig, x0);

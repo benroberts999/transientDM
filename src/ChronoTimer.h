@@ -6,10 +6,10 @@
 /*
 Class that uses std::chrono to easily time code
 Usage:
-  Create object. By default will not start the timer, unless 'true'
+  Create object. By default will start the timer, unless 'true'
   is given as optional input, e.g.:
-    ChronoTimer sw; //will not start the timing.
-    ChronoTimer sw; will
+    ChronoTimer sw(false); //will not start the timing.
+    ChronoTimer sw;        //will start
 
   sw.start() -- starts timing
   sw.stop()  -- 'pauses' timing
