@@ -1,5 +1,12 @@
 # Fibre-network transient DM search
 
+[![arXiv](https://img.shields.io/badge/arXiv-1907.02661%20-green.svg)](https://arxiv.org/abs/1907.02661)
+[![](https://img.shields.io/badge/New%20J.%20Phys.-doi:10.1088%2F1367--2630%2Fabaace-blue)](https://iopscience.iop.org/article/10.1088/1367-2630/abaace)
+
+
+
+From: _Search for transient variations of the fine structure constant and dark matter using fiber-linked optical atomic clocks_, [New J. Phys. (2020)](https://iopscience.iop.org/article/10.1088/1367-2630/abaace) [[arXiv:1907.02661](https://arxiv.org/abs/1907.02661)]
+
 Compile using Makefile: (run _$ make_ from command line).
 The relevant executable is called _transientDM_
 
